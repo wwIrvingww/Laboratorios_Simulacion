@@ -63,6 +63,12 @@ if __name__ == "__main__":
     # Casos de prueba con archivos TSP
     test_cases = [
         {
+            'name': '3case',
+            'file_path': 'pr1/data/3case.tsp/3case.tsp',
+            'population_size': 75,
+            'generations': 400
+        },
+        {
             'name': 'eil101',
             'file_path': 'pr1/data/eil101.tsp/eil101.tsp',
             'population_size': 100,
