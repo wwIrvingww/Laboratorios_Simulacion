@@ -1,3 +1,5 @@
+import math
+
 """
 Estructura:
 1. Calcular distancias
@@ -11,5 +13,23 @@ Estructura:
     c) No se puede viajar de una ciudad a sí misma
 5. Evitar subciclos: Obligatoriamente tiene que ser una ruta que pase por todas las ciudades.
 6. Resolver
-
 """
+cities = {
+    0: (0, 0),
+    1: (0, 2),
+    2: (3, 0),
+    3: (3, 3)
+}
+
+# Diccionario para guardar distancias
+distances = {}
+
+for i, (x1, y1) in cities.items():
+    for j, (x2, y2) in cities.items():
+        if i != j:  # no calcular de una ciudad a sí misma
+            d = math.dist((x1, y1), (x2, y2))  # distancia euclidiana
+            distances[(i, j)] = d
+
+# Mostrar tabla de distancias
+for (i, j), d in distances.items():
+    print(f"De {i} a {j}: {d:.2f}")
