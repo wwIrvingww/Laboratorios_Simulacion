@@ -35,11 +35,14 @@ n = len(cities)
 # Crear matriz de distancias vacía
 matrix = [[0.0 for _ in range(n)] for _ in range(n)]
 
-# Llenar matriz con distancias
+# Llenar matriz y diccionario con distancias
 for i, (x1, y1) in cities.items():
     for j, (x2, y2) in cities.items():
         if i != j:
-            matrix[i][j] = math.dist((x1, y1), (x2, y2))
+            d = math.dist((x1, y1), (x2, y2))
+            matrix[i][j] = d
+            distances[(i, j)] = d   # <<--- AGREGAR ESTA LÍNEA
+
 
 # Mostrar como DataFrame bonito
 df = pd.DataFrame(matrix, index=cities.keys(), columns=cities.keys())
@@ -50,10 +53,41 @@ print(df)
 
 n = len(cities)
 
-# Definir variables binarias x_ij
+#---Definir variables binarias x_ij---#
 x = pulp.LpVariable.dicts(
     "x",
     ((i, j) for i in range(n) for j in range(n) if i != j),
     cat="Binary"
 )
+
+#---FUNCION OBJETIVO---#
+# Crear el problema de optimización
+prob = pulp.LpProblem("TSP", pulp.LpMinimize)
+
+# Función objetivo: minimizar la suma de distancias
+prob += pulp.lpSum(
+    distances[(i, j)] * x[(i, j)]
+    for i in range(n) for j in range(n) if i != j
+)
+
+
+# --- Restricciones ---#
+# Una salida por ciudad
+for i in range(n):
+    prob += pulp.lpSum(x[(i, j)] for j in range(n) if i != j) == 1
+
+# Una entrada por ciudad
+for j in range(n):
+    prob += pulp.lpSum(x[(i, j)] for i in range(n) if i != j) == 1
+
+
+# Variables auxiliares para MTZ
+u = pulp.LpVariable.dicts("u", range(n), lowBound=0, upBound=n-1, cat="Integer")
+
+# Restricciones MTZ
+for i in range(1, n):      # desde ciudad 1 en adelante
+    for j in range(1, n):  # desde ciudad 1 en adelante
+        if i != j:
+            prob += u[i] - u[j] + (n-1) * x[(i, j)] <= n - 2
+
 
