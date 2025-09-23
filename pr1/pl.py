@@ -91,3 +91,18 @@ for i in range(1, n):      # desde ciudad 1 en adelante
             prob += u[i] - u[j] + (n-1) * x[(i, j)] <= n - 2
 
 
+
+# --- Imprimir modelo ---#
+print(prob)
+
+# --- Resolver ---
+prob.solve(pulp.PULP_CBC_CMD(msg=1))  # msg=1 para ver el log del solver
+
+print("\nEstado de la solución:", pulp.LpStatus[prob.status])
+print("Distancia mínima:", pulp.value(prob.objective))
+
+# Mostrar qué variables x_ij se activaron
+print("\nArcos seleccionados en la ruta óptima:")
+for (i, j) in x:
+    if pulp.value(x[(i, j)]) == 1:
+        print(f"De {i} a {j}")
