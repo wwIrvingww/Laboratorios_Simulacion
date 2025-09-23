@@ -1,5 +1,6 @@
 import math
 import pandas as pd
+import pulp
 
 """
 Estructura:
@@ -46,3 +47,13 @@ print(df)
 
 
 #---VARIABLES DE DECISIÓN---#
+
+n = len(cities)
+
+# Definir variables binarias x_ij
+x = pulp.LpVariable.dicts(
+    "x",
+    ((i, j) for i in range(n) for j in range(n) if i != j),
+    cat="Binary"
+)
+
