@@ -1,4 +1,5 @@
 import math
+import pandas as pd
 
 """
 Estructura:
@@ -14,6 +15,8 @@ Estructura:
 5. Evitar subciclos: Obligatoriamente tiene que ser una ruta que pase por todas las ciudades.
 6. Resolver
 """
+#---cALCULAR DISTANCIAS--#
+
 cities = {
     0: (0, 0),
     1: (0, 2),
@@ -24,12 +27,22 @@ cities = {
 # Diccionario para guardar distancias
 distances = {}
 
+
+# Número de ciudades
+n = len(cities)
+
+# Crear matriz de distancias vacía
+matrix = [[0.0 for _ in range(n)] for _ in range(n)]
+
+# Llenar matriz con distancias
 for i, (x1, y1) in cities.items():
     for j, (x2, y2) in cities.items():
-        if i != j:  # no calcular de una ciudad a sí misma
-            d = math.dist((x1, y1), (x2, y2))  # distancia euclidiana
-            distances[(i, j)] = d
+        if i != j:
+            matrix[i][j] = math.dist((x1, y1), (x2, y2))
 
-# Mostrar tabla de distancias
-for (i, j), d in distances.items():
-    print(f"De {i} a {j}: {d:.2f}")
+# Mostrar como DataFrame bonito
+df = pd.DataFrame(matrix, index=cities.keys(), columns=cities.keys())
+print(df)
+
+
+#---VARIABLES DE DECISIÓN---#
