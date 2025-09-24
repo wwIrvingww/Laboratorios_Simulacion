@@ -1,0 +1,6 @@
+problema,num_ciudades,method,ilp_status,time_s,ilp_obj,greedy_dist,active_arcs_count,png_path
+eil101,101,ILP,Optimal,1200.68,1334.7839,,101,C:\Users\irvin\UVG\Octavo_Semestre\Modelacion_Simulacion\Laboratorios_Simulacion\pr1\data\solutions\pngs\eil101_ILP.png
+gr229,229,GREEDY,Not Solved,1200.23,1129.8592,2014.7106,229,C:\Users\irvin\UVG\Octavo_Semestre\Modelacion_Simulacion\Laboratorios_Simulacion\pr1\data\solutions\pngs\gr229_GREEDY.png
+eil101,101,ILP,Optimal,4202.17,655.2662,,101,C:\Users\irvin\UVG\Octavo_Semestre\Modelacion_Simulacion\Laboratorios_Simulacion\pr1\data\solutions\pngs\eil101_ILP.png
+gr229,229,GREEDY,Not Solved,4200.49,1129.8592,2014.7106,229,C:\Users\irvin\UVG\Octavo_Semestre\Modelacion_Simulacion\Laboratorios_Simulacion\pr1\data\solutions\pngs\gr229_GREEDY.png
+3case,75,ILP,Optimal,4201.5,1902.4575,,75,C:\Users\irvin\UVG\Octavo_Semestre\Modelacion_Simulacion\Laboratorios_Simulacion\pr1\data\solutions\pngs\3case_ILP.png

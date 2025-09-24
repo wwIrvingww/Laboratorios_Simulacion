@@ -1,0 +1,6 @@
+problema,num_ciudades,poblacion_ga,iteraciones_ga,tiempo_ejecucion,distancia_suboptima
+eil101,101,0,0,1200.68,1334.7839
+gr229,229,0,0,1200.23,2014.7106
+eil101,101,0,0,4202.17,655.2662
+gr229,229,0,0,4200.49,2014.7106
+3case,75,0,0,4201.5,1902.4575
