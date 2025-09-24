@@ -1,6 +1,8 @@
 import math
 import pandas as pd
 import pulp
+import matplotlib.pyplot as plt
+
 
 """
 Estructura:
@@ -95,7 +97,7 @@ for i in range(1, n):      # desde ciudad 1 en adelante
 # --- Imprimir modelo ---#
 print(prob)
 
-# --- Resolver ---
+# --- Resolver ---#
 prob.solve(pulp.PULP_CBC_CMD(msg=1))  # msg=1 para ver el log del solver
 
 print("\nEstado de la solución:", pulp.LpStatus[prob.status])
@@ -106,3 +108,49 @@ print("\nArcos seleccionados en la ruta óptima:")
 for (i, j) in x:
     if pulp.value(x[(i, j)]) == 1:
         print(f"De {i} a {j}")
+
+
+
+def plot_route(cities, x_vars):
+    # Reconstruir la ruta a partir de las variables activas
+    route = []
+    current_city = 0
+    visited = {0}
+    route.append(current_city)
+    
+    while len(visited) < len(cities):
+        for j in cities:
+            if current_city != j and pulp.value(x_vars[(current_city, j)]) == 1:
+                route.append(j)
+                visited.add(j)
+                current_city = j
+                break
+    # Volvemos al inicio
+    route.append(0)
+    
+    # --- Graficar ---
+    xs = [cities[i][0] for i in route]
+    ys = [cities[i][1] for i in route]
+
+    plt.figure(figsize=(6,6))
+    plt.scatter([cities[i][0] for i in cities], [cities[i][1] for i in cities], c="red", s=50)
+    
+    for idx, (x, y) in cities.items():
+        plt.text(x+0.1, y+0.1, str(idx), fontsize=12)
+    
+    plt.plot(xs, ys, c="blue", linewidth=1.5, marker="o")
+    plt.title("Ruta óptima del TSP")
+    plt.show()
+    
+    return route
+
+
+# Resolver
+prob.solve(pulp.PULP_CBC_CMD(msg=0))
+
+print("Estado:", pulp.LpStatus[prob.status])
+print("Distancia mínima:", pulp.value(prob.objective))
+
+# Mostrar ruta y graficar
+optimal_route = plot_route(cities, x)
+print("Ruta óptima:", optimal_route)
