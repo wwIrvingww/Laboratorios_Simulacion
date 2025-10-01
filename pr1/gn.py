@@ -7,7 +7,7 @@ import pandas as pd
 # Añadir el directorio padre al path para poder importar Lab4
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from Lab4.tsp_genetic_algorithm import TSPGeneticAlgorithm
+from tsp_genetic_algorithm import TSPGeneticAlgorithm
 
 def parse_tsp_file(file_path):
     """
