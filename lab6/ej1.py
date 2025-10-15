@@ -129,3 +129,45 @@ anim = animation.FuncAnimation(fig, animate, init_func=init, frames=num_frames,
 
 plt.tight_layout()
 plt.show()
+
+import numpy as np
+
+def run_simulation(initial_particles, L, r, beta, gamma, dt, T):
+    """Simula la dinámica SIR por partículas y devuelve las series temporales."""
+    # Clonar el conjunto inicial para no modificarlo
+    particles = [Particle(p.x, p.y, p.vx, p.vy, p.state) for p in initial_particles]
+    
+    num_frames = int(T / dt)
+    S_history, I_history, R_history, time_history = [], [], [], []
+    
+    for frame in range(num_frames):
+        t = frame * dt
+
+        # Actualizar posiciones y recuperaciones
+        for p in particles:
+            p.update_position()
+            if p.state == 1:  # Infectado
+                p.infection_time += dt
+                if np.random.random() < gamma * dt:
+                    p.state = 2  # Recuperado
+
+        # Contagio entre partículas
+        for i, p1 in enumerate(particles):
+            if p1.state == 1:
+                for j, p2 in enumerate(particles):
+                    if i != j and p2.state == 0:
+                        dist = np.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2)
+                        if dist < r and np.random.random() < beta * dt:
+                            p2.state = 1
+
+        # Contar poblaciones
+        S = sum(1 for p in particles if p.state == 0)
+        I = sum(1 for p in particles if p.state == 1)
+        R = sum(1 for p in particles if p.state == 2)
+
+        S_history.append(S)
+        I_history.append(I)
+        R_history.append(R)
+        time_history.append(t)
+    
+    return np.array(S_history), np.array(I_history), np.array(R_history), np.array(time_history)
