@@ -12,3 +12,4 @@
 ![alt text](./img/image-2.png)
 ![alt text](./img/boxplot_comparacion.png)
 ![alt text](./img/comparacion_normal.png)
+
