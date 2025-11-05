@@ -1,0 +1,83 @@
+Generator,Test,Detail,p_value,Pass
+LCG (Park-Miller),Frequency (Monobit),,0.5713937805168801,True
+LCG (Park-Miller),Block Frequency (M=128),,0.9391640089962915,True
+LCG (Park-Miller),Runs,,0.31909436130372754,True
+LCG (Park-Miller),Longest Run of Ones,,0.34459017112230617,True
+LCG (Park-Miller),Binary Matrix Rank,,0.26641570618681076,True
+LCG (Park-Miller),Discrete Fourier Transform,,0.09308907735506433,True
+LCG (Park-Miller),Non-overlapping Template Matchings (m=9),N/A (NotImplemented),nan,False
+LCG (Park-Miller),Overlapping Template Matchings (m=9),,0.2150716659127936,True
+LCG (Park-Miller),Maurer's Universal,,0.8733627242455525,True
+LCG (Park-Miller),Linear Complexity (M=500),,0.5598237509001465,True
+LCG (Park-Miller),Serial (m=16),subtest#1,0.43745634146759205,True
+LCG (Park-Miller),Serial (m=16),subtest#2,0.31094279609420983,True
+LCG (Park-Miller),Approximate Entropy (m=10),,0.6331578669831259,True
+LCG (Park-Miller),Cumulative Sums (Forward),,0.7026545498432573,True
+LCG (Park-Miller),Cumulative Sums (Backward),,0.34129467147916515,True
+LCG (Park-Miller),Random Excursions,subtest#1,0.7258035290805774,True
+LCG (Park-Miller),Random Excursions,subtest#2,0.8099079567528742,True
+LCG (Park-Miller),Random Excursions,subtest#3,0.14256812360486606,True
+LCG (Park-Miller),Random Excursions,subtest#4,0.30933885862359317,True
+LCG (Park-Miller),Random Excursions,subtest#5,0.1908921609849342,True
+LCG (Park-Miller),Random Excursions,subtest#6,0.3111071800684737,True
+LCG (Park-Miller),Random Excursions,subtest#7,0.3244089119408772,True
+LCG (Park-Miller),Random Excursions,subtest#8,0.956198095549463,True
+LCG (Park-Miller),Random Excursions Variant,subtest#1,0.6568521615202967,True
+LCG (Park-Miller),Random Excursions Variant,subtest#2,0.853568192327486,True
+LCG (Park-Miller),Random Excursions Variant,subtest#3,0.7614466183316887,True
+LCG (Park-Miller),Random Excursions Variant,subtest#4,0.4267522658610197,True
+LCG (Park-Miller),Random Excursions Variant,subtest#5,0.30066408409797163,True
+LCG (Park-Miller),Random Excursions Variant,subtest#6,0.4127972224884481,True
+LCG (Park-Miller),Random Excursions Variant,subtest#7,0.6968245245200291,True
+LCG (Park-Miller),Random Excursions Variant,subtest#8,0.5444074942755595,True
+LCG (Park-Miller),Random Excursions Variant,subtest#9,0.05471931313940772,True
+LCG (Park-Miller),Random Excursions Variant,subtest#10,0.10775605352131289,True
+LCG (Park-Miller),Random Excursions Variant,subtest#11,0.3021825423802946,True
+LCG (Park-Miller),Random Excursions Variant,subtest#12,0.49062755621120885,True
+LCG (Park-Miller),Random Excursions Variant,subtest#13,0.7419432715711902,True
+LCG (Park-Miller),Random Excursions Variant,subtest#14,0.4256051989991287,True
+LCG (Park-Miller),Random Excursions Variant,subtest#15,0.5624320086020326,True
+LCG (Park-Miller),Random Excursions Variant,subtest#16,0.7147105087918876,True
+LCG (Park-Miller),Random Excursions Variant,subtest#17,0.8626261684654469,True
+LCG (Park-Miller),Random Excursions Variant,subtest#18,0.7125648963795844,True
+Mersenne Twister (MT19937),Frequency (Monobit),,0.48642882974810864,True
+Mersenne Twister (MT19937),Block Frequency (M=128),,0.3818499873282272,True
+Mersenne Twister (MT19937),Runs,,0.28393743408862177,True
+Mersenne Twister (MT19937),Longest Run of Ones,,0.7484636349656311,True
+Mersenne Twister (MT19937),Binary Matrix Rank,,0.22939918607655888,True
+Mersenne Twister (MT19937),Discrete Fourier Transform,,0.05172139230840491,True
+Mersenne Twister (MT19937),Non-overlapping Template Matchings (m=9),N/A (NotImplemented),nan,False
+Mersenne Twister (MT19937),Overlapping Template Matchings (m=9),,0.7139121788738181,True
+Mersenne Twister (MT19937),Maurer's Universal,,0.8690689378702435,True
+Mersenne Twister (MT19937),Linear Complexity (M=500),,0.8402562033482531,True
+Mersenne Twister (MT19937),Serial (m=16),subtest#1,0.1786632521155995,True
+Mersenne Twister (MT19937),Serial (m=16),subtest#2,0.610086602881242,True
+Mersenne Twister (MT19937),Approximate Entropy (m=10),,0.38455223674345496,True
+Mersenne Twister (MT19937),Cumulative Sums (Forward),,0.7985452323315805,True
+Mersenne Twister (MT19937),Cumulative Sums (Backward),,0.2600405343723562,True
+Mersenne Twister (MT19937),Random Excursions,subtest#1,0.01447871119119699,True
+Mersenne Twister (MT19937),Random Excursions,subtest#2,0.14614946440008353,True
+Mersenne Twister (MT19937),Random Excursions,subtest#3,0.7211663745865333,True
+Mersenne Twister (MT19937),Random Excursions,subtest#4,0.07531667479512943,True
+Mersenne Twister (MT19937),Random Excursions,subtest#5,0.19084067798741988,True
+Mersenne Twister (MT19937),Random Excursions,subtest#6,0.3936060842048569,True
+Mersenne Twister (MT19937),Random Excursions,subtest#7,0.19582111318909798,True
+Mersenne Twister (MT19937),Random Excursions,subtest#8,0.3548217264050956,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#1,0.5363273703784959,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#2,0.5614792234817769,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#3,0.6083164761632893,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#4,0.5863272144976558,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#5,0.5099643101683069,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#6,0.4452508964939661,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#7,0.24367407021104948,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#8,0.10863755916591504,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#9,0.7095817039196359,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#10,0.6883719251423412,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#11,0.3852124959613737,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#12,0.32076044711194385,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#13,0.5697247864124965,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#14,0.5442672337465586,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#15,0.3163645883170234,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#16,0.15844881003200142,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#17,0.11946615178292742,True
+Mersenne Twister (MT19937),Random Excursions Variant,subtest#18,0.10324590478890601,True
