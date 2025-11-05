@@ -190,7 +190,9 @@ def compare_generators(n_bits: int = 1_000_000, seed: int = 42) -> List[Dict[str
 
 
 def save_results(records: List[Dict[str, Any]], out_csv: str) -> None:
-    os.makedirs(os.path.dirname(out_csv), exist_ok=True)
+    dirpath = os.path.dirname(out_csv)
+    if dirpath:
+        os.makedirs(dirpath, exist_ok=True)
     if not records:
         print("No hay resultados para guardar.")
         return
@@ -219,7 +221,9 @@ if __name__ == "__main__":
     SEED = 42
 
     results = compare_generators(n_bits=N_BITS, seed=SEED)
-    save_path = os.path.join(os.path.dirname(__file__), "nist_results.csv")
+    # Usar ruta absoluta del archivo actual para evitar dirname vacío cuando se ejecuta como 'python ej3.py'
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    save_path = os.path.join(base_dir, "nist_results.csv")
     save_results(results, save_path)
     print_brief_summary(results)
     print("\nConcluya: compare el desempeño de los generadores a partir de los p-values y la tasa de aprobación.")
