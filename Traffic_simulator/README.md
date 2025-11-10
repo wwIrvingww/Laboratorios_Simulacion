@@ -86,15 +86,27 @@ pip install -r requirements.txt
 ```
 
 ## Uso
-```bash
-python main.py
-```
 
-Para ejecutar escenarios específicos:
+### Ejecutar simulaciones completas:
 ```bash
 python experiments/macroscopic_scenarios.py
 python experiments/microscopic_scenarios.py
 python experiments/comparative_analysis.py
+```
+
+### Generar animaciones:
+```bash
+python experiments/generate_animations.py
+```
+
+### Ver animaciones interactivas:
+```bash
+python experiments/view_animation.py
+```
+
+### Ejecutar todos los análisis:
+```bash
+python main.py
 ```
 
 # EJEMPLO DE USO DE utils/parameter.py
