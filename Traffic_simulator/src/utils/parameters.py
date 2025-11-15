@@ -6,7 +6,7 @@ RHO_MAX = 150.0
 L_ROAD = 10.0
 T_FINAL = 1.0
 DX = 0.1
-DT = 0.01
+DT = 0.001
 
 def get_spatial_grid(L=L_ROAD, dx=DX):
     return np.arange(0, L + dx, dx)

@@ -38,6 +38,7 @@ from src.utils.initial_conditions import (
 )
 from src.visualization.density_maps import plot_density_heatmap
 from src.visualization.spacetime_diagrams import plot_spacetime_diagram_macro
+from src.visualization.figure_navigator import FigureNavigator
 
 
 def create_output_directory(base_dir='results'):
@@ -286,6 +287,7 @@ def scenario_control_1_shock_wave(x, t, output_dirs):
     
     plt.savefig(os.path.join(output_dirs['comparisons'], 'scenario1_shock_control.png'),
                 dpi=300, bbox_inches='tight')
+    plt.show()
     plt.close()
     
     print(f"\n  Resultados Sin Control:")
@@ -367,6 +369,7 @@ def scenario_control_2_predictive(x, t, output_dirs):
     plt.tight_layout()
     plt.savefig(os.path.join(output_dirs['comparisons'], 'scenario2_predictive_control.png'),
                 dpi=300, bbox_inches='tight')
+    plt.show()
     plt.close()
     
     print(f"\n  Comparación de Métricas:")
@@ -482,6 +485,7 @@ def scenario_control_3_zone_based(x, t, output_dirs):
     plt.tight_layout()
     plt.savefig(os.path.join(output_dirs['comparisons'], 'scenario3_zone_control.png'),
                 dpi=300, bbox_inches='tight')
+    plt.show()
     plt.close()
     
     print(f"\n  Mejoras con Control por Zonas:")
@@ -552,6 +556,7 @@ def generate_comprehensive_report(all_results, output_dirs):
     plt.tight_layout()
     plt.savefig(os.path.join(output_dirs['figures'], 'comprehensive_comparison.png'),
                 dpi=300, bbox_inches='tight')
+    plt.show()
     plt.close()
     
     # Guardar reporte en texto

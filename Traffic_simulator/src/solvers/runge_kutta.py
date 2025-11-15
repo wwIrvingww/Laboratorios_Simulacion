@@ -1,6 +1,6 @@
 # src/solvers/runge_kutta.py
 """
-Integrador Runge-Kutta 4 (RK4) para el modelo microscópico.
+Integrador Runge-Kutta 4 (RK4) para el modelo microscopico.
 """
 from typing import Tuple, Optional
 import numpy as np
@@ -70,25 +70,25 @@ def rk4_step(model, dt: float, periodic: bool = False, road_length: Optional[flo
     dpos4 = vel_k4
     dvel4 = _compute_accelerations(pos_k4, vel_k4, params, periodic=periodic, road_length=road_length)
 
-    # combinar incrementos (fórmula clásica RK4)
+    # combinar incrementos (formula clasica RK4)
     pos_new = pos0 + (dt / 6.0) * (dpos1 + 2.0 * dpos2 + 2.0 * dpos3 + dpos4)
     vel_new = vel0 + (dt / 6.0) * (dvel1 + 2.0 * dvel2 + 2.0 * dvel3 + dvel4)
 
     # evitar velocidades negativas
     vel_new = np.maximum(vel_new, 0.0)
 
-    # aplicar estado nuevo al modelo (mutación)
+    # aplicar estado nuevo al modelo (mutacion)
     model.positions = pos_new
     model.velocities = vel_new
 
-    # --- aquí está el paso 3: aplicar corrección "hard-core" para evitar solapamientos ---
-    # elegir s_min: si el usuario lo especificó en params lo usamos; si no, usamos s0 (o una fracción)
+    # --- aqui esta el paso 3: aplicar correccion "hard-core" para evitar solapamientos ---
+    # elegir s_min: si el usuario lo especifico en params lo usamos; si no, usamos s0 (o una fraccion)
     s_min = model.params.get("s_min", model.params.get("s0", 2.0))
     try:
-        # llama al método que implementamos en MicroscopicModel
+        # llama al metodo que implementamos en MicroscopicModel
         model.enforce_min_spacing(s_min, periodic=periodic, road_length=road_length)
     except AttributeError:
-        # si el modelo no tiene enforce_min_spacing no hacemos nada (compatibilidad hacia atrás)
+        # si el modelo no tiene enforce_min_spacing no hacemos nada (compatibilidad hacia atras)
         pass
     # -------------------------------------------------------------------------------
 
@@ -100,7 +100,7 @@ def simulate(model,
              road_length: Optional[float] = None,
              record: bool = False) -> Optional[Tuple[np.ndarray, np.ndarray]]:
     """
-    Corre la simulación n_steps pasos con rk4_step.
+    Corre la simulacion n_steps pasos con rk4_step.
     """
     if record:
         positions_record = np.zeros((n_steps + 1, model.n_cars), dtype=float)

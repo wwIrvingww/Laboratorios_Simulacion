@@ -58,6 +58,7 @@ from src.visualization.travel_time_plots import (
     plot_average_velocity,
     plot_congestion_metrics
 )
+from src.visualization.figure_navigator import FigureNavigator
 
 
 def create_output_directory(base_dir='results'):
@@ -79,10 +80,10 @@ def create_output_directory(base_dir='results'):
     return dirs
 
 
-def run_scenario(scenario_name, rho0, x, t, output_dirs, boundary='periodic'):
+def run_scenario(scenario_name, rho0, x, t, output_dirs, boundary='periodic', show_plots=True):
     """
     Ejecuta un escenario completo de simulación y genera todas las visualizaciones.
-    
+
     Parámetros:
         scenario_name (str): Nombre del escenario
         rho0 (np.ndarray): Condición inicial de densidad
@@ -90,119 +91,187 @@ def run_scenario(scenario_name, rho0, x, t, output_dirs, boundary='periodic'):
         t (np.ndarray): Malla temporal
         output_dirs (dict): Diccionario con rutas de salida
         boundary (str): Tipo de condiciones de frontera
-    
+        show_plots (bool): Si True, muestra el navegador interactivo; si False, solo guarda
+
     Retorna:
         dict: Resultados de la simulación y métricas
     """
     print(f"\n{'='*60}")
     print(f"Ejecutando escenario: {scenario_name}")
     print(f"{'='*60}")
-    
+
     # Simular flujo de tráfico
     results = simulate_traffic_flow(rho0, x, t, boundary=boundary)
     rho = results['rho']
     flux = results['flux']
     velocity = results['velocity']
-    
+
     # Crear subdirectorio para este escenario (remover caracteres inválidos de Windows)
     safe_name = scenario_name.replace(' ', '_').replace(':', '').replace('/', '_').lower()
     scenario_dir = os.path.join(output_dirs['figures'], safe_name)
     os.makedirs(scenario_dir, exist_ok=True)
-    
-    # 1. Mapa de calor de densidad
-    print("  - Generando mapa de calor...")
-    plot_density_heatmap(
-        rho, x, t,
-        title=f"Mapa de Densidad - {scenario_name}",
-        filename=os.path.join(scenario_dir, 'density_heatmap.png')
-    )
-    plt.close()
-    
-    # 2. Snapshots de densidad en múltiples tiempos
-    print("  - Generando snapshots temporales...")
-    n_snapshots = 5
-    time_indices = np.linspace(0, len(t)-1, n_snapshots, dtype=int)
-    plot_density_snapshots(
-        rho, x, t, time_indices,
-        filename=os.path.join(scenario_dir, 'density_snapshots.png')
-    )
-    plt.close()
-    
-    # 3. Evolución temporal en posiciones específicas
-    print("  - Generando evolución temporal...")
-    n_positions = 5
-    position_indices = np.linspace(0, len(x)-1, n_positions, dtype=int)
-    plot_density_evolution(
-        rho, x, t, position_indices,
-        filename=os.path.join(scenario_dir, 'density_evolution.png')
-    )
-    plt.close()
-    
-    # 4. Diagrama fundamental (flujo vs densidad)
-    print("  - Generando diagrama fundamental...")
-    plot_flux_density_relation(
-        rho, flux,
-        filename=os.path.join(scenario_dir, 'fundamental_diagram.png')
-    )
-    plt.close()
-    
-    # 5. Diagrama espacio-tiempo
-    print("  - Generando diagrama espacio-tiempo...")
-    plot_spacetime_diagram_macro(
-        rho, x, t, levels=15,
-        filename=os.path.join(scenario_dir, 'spacetime_diagram.png')
-    )
-    plt.close()
-    
-    # 6. Detección de ondas de choque
-    print("  - Detectando ondas de choque...")
-    shock_info = detect_shock_waves(rho, x, t, threshold_gradient=50.0)
-    plot_shockwave_detection(
-        rho, x, t, threshold=50,
-        filename=os.path.join(scenario_dir, 'shockwave_detection.png')
-    )
-    plt.close()
-    
-    # 7. Curvas características
-    print("  - Generando curvas características...")
-    x0_positions = [x[len(x)//4], x[len(x)//2], x[3*len(x)//4]]
-    plot_characteristic_curves(
-        rho, x, t, x0_positions,
-        filename=os.path.join(scenario_dir, 'characteristic_curves.png')
-    )
-    plt.close()
-    
-    # 8. Tiempo de viaje
-    print("  - Calculando tiempos de viaje...")
+
+    # Crear UNA SOLA figura con 5 axes para las 5 graficas mas importantes
+    print("  - Generando graficas...")
+    fig = plt.figure(figsize=(10, 6))
+
+    # Crear 5 axes individuales con márgenes adecuados
+    axes_list = []
+    titles_list = []
+
+    for i in range(5):
+        # Cada axis ocupa todo el espacio, pero solo uno será visible
+        ax = fig.add_axes([0.12, 0.15, 0.85, 0.70])
+        ax.set_visible(False)
+        axes_list.append(ax)
+
+    # Llenar cada subplot con su grafica correspondiente
+    # 1. Diagrama espacio-tiempo (densidad)
+    ax = axes_list[0]
+    cf = ax.contourf(x, t, rho, levels=15, cmap='coolwarm')
+    ax.set_xlabel('Posicion (km)', fontsize=9, fontweight='bold')
+    ax.set_ylabel('Tiempo (h)', fontsize=9, fontweight='bold')
+    ax.set_title('Diagrama Espacio-Tiempo (Densidad)', fontsize=10, fontweight='bold')
+    cbar1 = fig.colorbar(cf, ax=ax, label='Densidad (veh/km)')
+    ax.colorbar = cbar1
+    ax.set_visible(False)
+    titles_list.append("Diagrama Espacio-Tiempo")
+
+    # 2. Densidad promedio espacial
+    ax = axes_list[1]
+    density_spatial_avg = np.mean(rho, axis=0)
+    ax.plot(x, density_spatial_avg, 'b-', linewidth=2.5)
+    ax.fill_between(x, 0, density_spatial_avg, alpha=0.3, color='blue')
+    ax.set_xlabel('Posicion (km)', fontsize=9, fontweight='bold')
+    ax.set_ylabel('Densidad Promedio (veh/km)', fontsize=9, fontweight='bold')
+    ax.set_title('Densidad Promedio Espacial', fontsize=10, fontweight='bold')
+    ax.grid(True, alpha=0.3)
+    ax.set_visible(False)
+    titles_list.append("Densidad Espacial Promedio")
+
+    # 3. Velocidad promedio
+    ax = axes_list[2]
+    avg_velocity = compute_average_velocity(rho)
+    ax.plot(t, avg_velocity, 'g-', linewidth=2)
+    ax.fill_between(t, 0, avg_velocity, alpha=0.3, color='green')
+    ax.set_xlabel('Tiempo (h)', fontsize=9, fontweight='bold')
+    ax.set_ylabel('Velocidad Promedio (km/h)', fontsize=9, fontweight='bold')
+    ax.set_title('Velocidad Promedio Temporal', fontsize=10, fontweight='bold')
+    ax.grid(True, alpha=0.3)
+    ax.set_visible(False)
+    titles_list.append("Velocidad Promedio")
+
+    # 4. Tiempo de viaje
+    ax = axes_list[3]
     travel_time = compute_travel_time(rho, x, t)
-    plot_travel_time_evolution(
-        travel_time, t,
-        filename=os.path.join(scenario_dir, 'travel_time.png')
-    )
-    plt.close()
-    
-    # 9. Velocidad promedio
-    print("  - Calculando velocidad promedio...")
-    plot_average_velocity(
-        rho, x, t,
-        filename=os.path.join(scenario_dir, 'average_velocity.png')
-    )
-    plt.close()
-    
-    # 10. Métricas de congestión
-    print("  - Calculando métricas de congestión...")
-    plot_congestion_metrics(
-        rho, x, t, threshold=75,
-        filename=os.path.join(scenario_dir, 'congestion_metrics.png')
-    )
-    plt.close()
+    ax.plot(t, travel_time * 60, 'purple', linewidth=2.5)
+    ax.fill_between(t, 0, travel_time * 60, alpha=0.3, color='purple')
+    ax.set_xlabel('Tiempo (h)', fontsize=9, fontweight='bold')
+    ax.set_ylabel('Tiempo de Viaje (min)', fontsize=9, fontweight='bold')
+    ax.set_title('Evolucion del Tiempo de Viaje', fontsize=10, fontweight='bold')
+    ax.grid(True, alpha=0.3)
+    ax.set_visible(False)
+    titles_list.append("Tiempo de Viaje")
+
+    # 5. Metricas de congestión
+    ax = axes_list[4]
+    congestion_info = compute_congestion_level(rho, threshold=75.0)
+    congestion_frac = congestion_info['congestion_fraction']
+    ax.plot(t, congestion_frac * 100, 'r-', linewidth=2)
+    ax.fill_between(t, 0, congestion_frac * 100, alpha=0.3, color='red')
+    ax.set_xlabel('Tiempo (h)', fontsize=9, fontweight='bold')
+    ax.set_ylabel('Porcentaje Congestionado (%)', fontsize=9, fontweight='bold')
+    ax.set_title('Metricas de Congestion', fontsize=10, fontweight='bold')
+    ax.grid(True, alpha=0.3)
+    ax.set_visible(False)
+    titles_list.append("Metricas de Congestion")
+
+    # Guardar figura completa PRIMERO
+    print("  - Guardando graficas...")
+    for i, ax in enumerate(axes_list):
+        ax.set_visible(True)
+    plt.savefig(os.path.join(scenario_dir, 'all_plots.png'), dpi=150, bbox_inches='tight')
+    plt.close(fig)
+
+    # LUEGO mostrar navegador interactivo (si aplica)
+    if show_plots:
+        # Recrear la figura para mostrar interactivamente
+        fig = plt.figure(figsize=(10, 6))
+        axes_list_display = []
+
+        # Recrear los 5 axes con márgenes adecuados
+        for i in range(5):
+            ax = fig.add_axes([0.12, 0.15, 0.85, 0.70])
+            ax.set_visible(False)
+            axes_list_display.append(ax)
+
+        # 1. Diagrama espacio-tiempo
+        ax = axes_list_display[0]
+        cf = ax.contourf(x, t, rho, levels=15, cmap='coolwarm')
+        ax.set_xlabel('Posicion (km)', fontsize=9, fontweight='bold')
+        ax.set_ylabel('Tiempo (h)', fontsize=9, fontweight='bold')
+        ax.set_title('Diagrama Espacio-Tiempo', fontsize=10, fontweight='bold')
+        cbar1 = fig.colorbar(cf, ax=ax, label='Densidad (veh/km)')
+        ax.colorbar = cbar1
+        ax.set_visible(False)
+
+        # 2. Densidad promedio espacial
+        ax = axes_list_display[1]
+        density_spatial_avg = np.mean(rho, axis=0)
+        ax.plot(x, density_spatial_avg, 'b-', linewidth=2.5)
+        ax.fill_between(x, 0, density_spatial_avg, alpha=0.3, color='blue')
+        ax.set_xlabel('Posicion (km)', fontsize=9, fontweight='bold')
+        ax.set_ylabel('Densidad Promedio (veh/km)', fontsize=9, fontweight='bold')
+        ax.set_title('Densidad Promedio Espacial', fontsize=10, fontweight='bold')
+        ax.grid(True, alpha=0.3)
+        ax.set_visible(False)
+
+        # 3. Velocidad promedio
+        ax = axes_list_display[2]
+        avg_velocity_plot = compute_average_velocity(rho)
+        ax.plot(t, avg_velocity_plot, 'g-', linewidth=2)
+        ax.fill_between(t, 0, avg_velocity_plot, alpha=0.3, color='green')
+        ax.set_xlabel('Tiempo (h)', fontsize=9, fontweight='bold')
+        ax.set_ylabel('Velocidad Promedio (km/h)', fontsize=9, fontweight='bold')
+        ax.set_title('Velocidad Promedio Temporal', fontsize=10, fontweight='bold')
+        ax.grid(True, alpha=0.3)
+        ax.set_visible(False)
+
+        # 4. Tiempo de viaje
+        ax = axes_list_display[3]
+        travel_time_plot = compute_travel_time(rho, x, t)
+        ax.plot(t, travel_time_plot * 60, 'purple', linewidth=2.5)
+        ax.fill_between(t, 0, travel_time_plot * 60, alpha=0.3, color='purple')
+        ax.set_xlabel('Tiempo (h)', fontsize=9, fontweight='bold')
+        ax.set_ylabel('Tiempo de Viaje (min)', fontsize=9, fontweight='bold')
+        ax.set_title('Evolucion del Tiempo de Viaje', fontsize=10, fontweight='bold')
+        ax.grid(True, alpha=0.3)
+        ax.set_visible(False)
+
+        # 5. Metricas de congestion
+        ax = axes_list_display[4]
+        congestion_info_plot = compute_congestion_level(rho, threshold=75.0)
+        congestion_frac_plot = congestion_info_plot['congestion_fraction']
+        ax.plot(t, congestion_frac_plot * 100, 'r-', linewidth=2)
+        ax.fill_between(t, 0, congestion_frac_plot * 100, alpha=0.3, color='red')
+        ax.set_xlabel('Tiempo (h)', fontsize=9, fontweight='bold')
+        ax.set_ylabel('Porcentaje Congestionado (%)', fontsize=9, fontweight='bold')
+        ax.set_title('Metricas de Congestion', fontsize=10, fontweight='bold')
+        ax.grid(True, alpha=0.3)
+        ax.set_visible(False)
+
+        print(f"\n  Abriendo navegador interactivo (5 graficas)...")
+        navigator = FigureNavigator(axes_list_display, title_prefix=f"Escenario: {scenario_name}")
+        navigator.display()
     
     # Calcular métricas resumen
     avg_density = compute_average_density(rho, x)
     avg_velocity = compute_average_velocity(rho)
     congestion_info = compute_congestion_level(rho, threshold=75.0)
     total_vehicles = compute_total_vehicles(rho, x)
-    
+    travel_time = compute_travel_time(rho, x, t)
+    shock_info = detect_shock_waves(rho, x, t)
+
     metrics = {
         'scenario_name': scenario_name,
         'avg_density_initial': avg_density[0],
@@ -236,46 +305,46 @@ def run_scenario(scenario_name, rho0, x, t, output_dirs, boundary='periodic'):
     }
 
 
-def scenario_1_free_flow(x, t, output_dirs):
+def scenario_1_free_flow(x, t, output_dirs, show_plots=True):
     """Escenario 1: Flujo libre con densidad baja uniforme."""
     rho0 = uniform_density(x, rho_value=30.0)
-    return run_scenario("Escenario 1: Flujo Libre", rho0, x, t, output_dirs)
+    return run_scenario("Escenario 1: Flujo Libre", rho0, x, t, output_dirs, show_plots=show_plots)
 
 
-def scenario_2_uniform_congestion(x, t, output_dirs):
+def scenario_2_uniform_congestion(x, t, output_dirs, show_plots=True):
     """Escenario 2: Congestión uniforme con densidad alta."""
     rho0 = uniform_density(x, rho_value=120.0)
-    return run_scenario("Escenario 2: Congestión Uniforme", rho0, x, t, output_dirs)
+    return run_scenario("Escenario 2: Congestión Uniforme", rho0, x, t, output_dirs, show_plots=show_plots)
 
 
-def scenario_3_shock_wave(x, t, output_dirs):
+def scenario_3_shock_wave(x, t, output_dirs, show_plots=True):
     """Escenario 3: Formación de onda de choque."""
     rho0 = shock_wave_scenario(x, x_shock=5.0, rho_upstream=140.0, rho_downstream=30.0)
-    return run_scenario("Escenario 3: Onda de Choque", rho0, x, t, output_dirs)
+    return run_scenario("Escenario 3: Onda de Choque", rho0, x, t, output_dirs, show_plots=show_plots)
 
 
-def scenario_4_gaussian_pulse(x, t, output_dirs):
+def scenario_4_gaussian_pulse(x, t, output_dirs, show_plots=True):
     """Escenario 4: Perturbación localizada (pulso gaussiano)."""
     rho0 = gaussian_pulse(x, x0=5.0, amplitude=100.0, width=0.5)
-    return run_scenario("Escenario 4: Perturbación Gaussiana", rho0, x, t, output_dirs)
+    return run_scenario("Escenario 4: Perturbación Gaussiana", rho0, x, t, output_dirs, show_plots=show_plots)
 
 
-def scenario_5_sinusoidal(x, t, output_dirs):
+def scenario_5_sinusoidal(x, t, output_dirs, show_plots=True):
     """Escenario 5: Perturbación sinusoidal."""
     rho0 = sinusoidal_perturbation(x, rho_base=60.0, amplitude=30.0, wavelength=2.0)
-    return run_scenario("Escenario 5: Perturbación Sinusoidal", rho0, x, t, output_dirs)
+    return run_scenario("Escenario 5: Perturbación Sinusoidal", rho0, x, t, output_dirs, show_plots=show_plots)
 
 
-def scenario_6_two_pulses(x, t, output_dirs):
+def scenario_6_two_pulses(x, t, output_dirs, show_plots=True):
     """Escenario 6: Dos pulsos interactuantes."""
     rho0 = two_pulse_scenario(x, x1=3.0, x2=7.0, amplitude1=80.0, amplitude2=100.0, width=0.5)
-    return run_scenario("Escenario 6: Dos Pulsos", rho0, x, t, output_dirs)
+    return run_scenario("Escenario 6: Dos Pulsos", rho0, x, t, output_dirs, show_plots=show_plots)
 
 
-def scenario_7_linear_gradient(x, t, output_dirs):
+def scenario_7_linear_gradient(x, t, output_dirs, show_plots=True):
     """Escenario 7: Gradiente lineal de densidad."""
     rho0 = linear_gradient(x, rho_start=20.0, rho_end=120.0)
-    return run_scenario("Escenario 7: Gradiente Lineal", rho0, x, t, output_dirs)
+    return run_scenario("Escenario 7: Gradiente Lineal", rho0, x, t, output_dirs, show_plots=show_plots)
 
 
 def generate_summary_report(all_metrics, output_dirs):
@@ -291,7 +360,7 @@ def generate_summary_report(all_metrics, output_dirs):
     print(f"{'='*60}\n")
     
     # Crear tabla comparativa
-    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+    fig, axes = plt.subplots(2, 2, figsize=(12, 9))
     
     scenario_names = [m['scenario_name'] for m in all_metrics]
     
@@ -303,8 +372,8 @@ def generate_summary_report(all_metrics, output_dirs):
     width = 0.35
     ax.bar(x_pos - width/2, initial_densities, width, label='Inicial', alpha=0.8)
     ax.bar(x_pos + width/2, final_densities, width, label='Final', alpha=0.8)
-    ax.set_ylabel('Densidad Promedio (veh/km)', fontsize=11)
-    ax.set_title('Comparación de Densidad Promedio', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Densidad Promedio (veh/km)', fontsize=9)
+    ax.set_title('Comparación de Densidad Promedio', fontsize=10, fontweight='bold')
     ax.set_xticks(x_pos)
     ax.set_xticklabels([f"E{i+1}" for i in range(len(scenario_names))], rotation=0)
     ax.legend()
@@ -316,8 +385,8 @@ def generate_summary_report(all_metrics, output_dirs):
     final_velocities = [m['avg_velocity_final'] for m in all_metrics]
     ax.bar(x_pos - width/2, initial_velocities, width, label='Inicial', alpha=0.8)
     ax.bar(x_pos + width/2, final_velocities, width, label='Final', alpha=0.8)
-    ax.set_ylabel('Velocidad Promedio (km/h)', fontsize=11)
-    ax.set_title('Comparación de Velocidad Promedio', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Velocidad Promedio (km/h)', fontsize=9)
+    ax.set_title('Comparación de Velocidad Promedio', fontsize=10, fontweight='bold')
     ax.set_xticks(x_pos)
     ax.set_xticklabels([f"E{i+1}" for i in range(len(scenario_names))], rotation=0)
     ax.legend()
@@ -329,8 +398,8 @@ def generate_summary_report(all_metrics, output_dirs):
     final_travel = [m['travel_time_final'] * 60 for m in all_metrics]
     ax.bar(x_pos - width/2, initial_travel, width, label='Inicial', alpha=0.8)
     ax.bar(x_pos + width/2, final_travel, width, label='Final', alpha=0.8)
-    ax.set_ylabel('Tiempo de Viaje (min)', fontsize=11)
-    ax.set_title('Comparación de Tiempo de Viaje', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Tiempo de Viaje (min)', fontsize=9)
+    ax.set_title('Comparación de Tiempo de Viaje', fontsize=10, fontweight='bold')
     ax.set_xticks(x_pos)
     ax.set_xticklabels([f"E{i+1}" for i in range(len(scenario_names))], rotation=0)
     ax.legend()
@@ -345,9 +414,9 @@ def generate_summary_report(all_metrics, output_dirs):
     bar1 = ax.bar(x_pos - width/2, congestion, width, label='Congestión (%)', alpha=0.8, color='orange')
     bar2 = ax2.bar(x_pos + width/2, shockwaves, width, label='Ondas de Choque', alpha=0.8, color='red')
     
-    ax.set_ylabel('Congestión Máxima (%)', fontsize=11, color='orange')
-    ax2.set_ylabel('Ondas de Choque Detectadas', fontsize=11, color='red')
-    ax.set_title('Congestión y Ondas de Choque', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Congestión Máxima (%)', fontsize=9, color='orange')
+    ax2.set_ylabel('Ondas de Choque Detectadas', fontsize=9, color='red')
+    ax.set_title('Congestión y Ondas de Choque', fontsize=10, fontweight='bold')
     ax.set_xticks(x_pos)
     ax.set_xticklabels([f"E{i+1}" for i in range(len(scenario_names))], rotation=0)
     ax.tick_params(axis='y', labelcolor='orange')
@@ -362,6 +431,7 @@ def generate_summary_report(all_metrics, output_dirs):
     plt.tight_layout()
     summary_path = os.path.join(output_dirs['figures'], 'summary_comparison.png')
     plt.savefig(summary_path, dpi=300, bbox_inches='tight')
+    plt.show()
     plt.close()
     
     print(f"Reporte resumen guardado en: {summary_path}")
@@ -399,7 +469,7 @@ def plot_fundamental_diagram_theory(output_dirs):
     
     fundamental = compute_fundamental_diagram()
     
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4))
     
     # Flujo vs Densidad
     ax = axes[0]
@@ -408,9 +478,9 @@ def plot_fundamental_diagram_theory(output_dirs):
                label=f'ρ_crítica = {fundamental["rho_critical"]:.1f} veh/km')
     ax.axhline(fundamental['flux_max'], color='g', linestyle='--',
                label=f'q_max = {fundamental["flux_max"]:.1f} veh/h')
-    ax.set_xlabel('Densidad ρ (veh/km)', fontsize=12)
-    ax.set_ylabel('Flujo q (veh/h)', fontsize=12)
-    ax.set_title('Diagrama Fundamental: Flujo vs Densidad', fontsize=13, fontweight='bold')
+    ax.set_xlabel('Densidad ρ (veh/km)', fontsize=10)
+    ax.set_ylabel('Flujo q (veh/h)', fontsize=10)
+    ax.set_title('Diagrama Fundamental: Flujo vs Densidad', fontsize=10, fontweight='bold')
     ax.grid(True, alpha=0.3)
     ax.legend()
     
@@ -419,15 +489,16 @@ def plot_fundamental_diagram_theory(output_dirs):
     ax.plot(fundamental['rho'], fundamental['velocity'], 'r-', linewidth=2)
     ax.axvline(fundamental['rho_critical'], color='r', linestyle='--',
                label=f'ρ_crítica = {fundamental["rho_critical"]:.1f} veh/km')
-    ax.set_xlabel('Densidad ρ (veh/km)', fontsize=12)
-    ax.set_ylabel('Velocidad v (km/h)', fontsize=12)
-    ax.set_title('Relación Velocidad-Densidad (Greenshields)', fontsize=13, fontweight='bold')
+    ax.set_xlabel('Densidad ρ (veh/km)', fontsize=10)
+    ax.set_ylabel('Velocidad v (km/h)', fontsize=10)
+    ax.set_title('Relación Velocidad-Densidad (Greenshields)', fontsize=10, fontweight='bold')
     ax.grid(True, alpha=0.3)
     ax.legend()
     
     plt.tight_layout()
     diagram_path = os.path.join(output_dirs['figures'], 'fundamental_diagram_theory.png')
     plt.savefig(diagram_path, dpi=300, bbox_inches='tight')
+    plt.show()
     plt.close()
     
     print(f"Diagrama fundamental teórico guardado en: {diagram_path}")
@@ -435,27 +506,42 @@ def plot_fundamental_diagram_theory(output_dirs):
 
 def main():
     """
-    Función principal que ejecuta todos los escenarios macroscópicos.
+    Función principal que ejecuta escenarios macroscópicos.
+
+    Parámetros de línea de comandos:
+      - Sin argumentos: ejecuta TODOS los escenarios
+      - --scenario N: ejecuta solo el escenario N (1-7)
+      - --silent: ejecuta sin mostrar gráficos interactivos (solo guarda archivos)
     """
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Simulación macroscópica de tráfico vehicular')
+    parser.add_argument('--scenario', type=int, default=None, help='Ejecutar escenario específico (1-7)')
+    parser.add_argument('--silent', action='store_true', help='Modo silencioso (sin mostrar gráficos)')
+    args = parser.parse_args()
+
+    # Determinar si mostrar gráficos interactivos
+    show_plots = not args.silent
+
     print("\n" + "="*80)
     print("SIMULACIÓN MACROSCÓPICA DE TRÁFICO VEHICULAR")
     print("Modelo: Ecuación de Conservación + Greenshields")
     print("Método numérico: Lax-Friedrichs")
     print("="*80)
-    
+
     # Crear estructura de directorios
     output_dirs = create_output_directory()
     print(f"\nResultados se guardarán en: {output_dirs['figures']}")
-    
+
     # Definir parámetros de discretización
     L = 10.0    # Longitud de la carretera (km)
     T = 1.0     # Tiempo total de simulación (h)
     dx = 0.1    # Espaciamiento espacial (km)
-    dt = 0.01   # Paso temporal (h)
-    
+    dt = 0.001  # Paso temporal (h)
+
     x = get_spatial_grid(L=L, dx=dx)
     t = get_temporal_grid(T=T, dt=dt)
-    
+
     print(f"\nParámetros de simulación:")
     print(f"  - Longitud carretera: L = {L} km")
     print(f"  - Tiempo simulación: T = {T} h")
@@ -463,35 +549,48 @@ def main():
     print(f"  - Paso temporal: dt = {dt} h ({len(t)} pasos)")
     print(f"  - V_max = {V_MAX} km/h")
     print(f"  - ρ_max = {RHO_MAX} veh/km")
-    
+
     # Generar diagrama fundamental teórico
     plot_fundamental_diagram_theory(output_dirs)
-    
-    # Ejecutar todos los escenarios
+
+    # Definir todos los escenarios
+    scenarios_map = {
+        1: ('Flujo Libre', scenario_1_free_flow),
+        2: ('Congestión Uniforme', scenario_2_uniform_congestion),
+        3: ('Onda de Choque', scenario_3_shock_wave),
+        4: ('Perturbación Gaussiana', scenario_4_gaussian_pulse),
+        5: ('Perturbación Sinusoidal', scenario_5_sinusoidal),
+        6: ('Dos Pulsos', scenario_6_two_pulses),
+        7: ('Gradiente Lineal', scenario_7_linear_gradient)
+    }
+
+    # Determinar qué escenarios ejecutar
+    if args.scenario is not None:
+        if args.scenario < 1 or args.scenario > 7:
+            print(f"\nError: Escenario {args.scenario} no válido. Debe estar entre 1 y 7.")
+            sys.exit(1)
+        scenarios_to_run = [args.scenario]
+    else:
+        scenarios_to_run = list(range(1, 8))
+
+    # Ejecutar escenarios
     all_results = []
     all_metrics = []
-    
-    scenarios = [
-        scenario_1_free_flow,
-        scenario_2_uniform_congestion,
-        scenario_3_shock_wave,
-        scenario_4_gaussian_pulse,
-        scenario_5_sinusoidal,
-        scenario_6_two_pulses,
-        scenario_7_linear_gradient
-    ]
-    
-    for scenario_func in scenarios:
-        result = scenario_func(x, t, output_dirs)
+
+    for scenario_num in scenarios_to_run:
+        name, scenario_func = scenarios_map[scenario_num]
+        print(f"\n[{scenario_num}/7] Ejecutando: {name}")
+        result = scenario_func(x, t, output_dirs, show_plots=show_plots)
         all_results.append(result)
         all_metrics.append(result['metrics'])
-    
-    # Generar reporte resumen
-    generate_summary_report(all_metrics, output_dirs)
-    
+
+    # Generar reporte resumen (solo si se ejecutaron todos)
+    if len(scenarios_to_run) == 7:
+        generate_summary_report(all_metrics, output_dirs)
+
     print("\n" + "="*80)
     print("SIMULACIÓN COMPLETADA EXITOSAMENTE")
-    print(f"Total de escenarios ejecutados: {len(scenarios)}")
+    print(f"Total de escenarios ejecutados: {len(scenarios_to_run)}")
     print(f"Resultados guardados en: {output_dirs['figures']}")
     print("="*80 + "\n")
 
