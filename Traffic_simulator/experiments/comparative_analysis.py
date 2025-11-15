@@ -64,21 +64,26 @@ def run_macroscopic_scenario(scenario_name, rho0, x, t):
 
 
 def run_microscopic_scenario(scenario_name, n_cars, road_length, final_time, dt):
-    """Ejecuta un escenario microscopico y retorna resultados."""
     print(f"  - Ejecutando modelo microscopico ({n_cars} vehiculos)...")
 
-    params = {
-        "v0": 30.0,
-        "a": 1.2,
-        "b": 1.5,
-        "T": 1.5,
-        "s0": 2.0,
-        "s_min": 2.0
-    }
+    params = {"v0": 30.0, "a": 1.2, "b": 1.5, "T": 1.5, "s0": 2.0, "s_min": 2.0}
 
-    init_positions = np.linspace(0.0, road_length * 0.9, n_cars)
-    v0 = params["v0"]
-    init_velocities = np.ones(n_cars, dtype=float) * (0.8 * v0)
+    # Densidad real microscópica
+    km_length = road_length / 1000.0  
+    density = n_cars / km_length
+    print(f"    Densidad microscópica real: {density:.2f} veh/km")
+
+    # Posiciones iniciales cercanas para forzar congestión
+    spacing = road_length / n_cars * 0.5
+    init_positions = np.array([i * spacing for i in range(n_cars)], dtype=float)
+
+    # Velocidad inicial depende de la densidad
+    if density < 20:            # flujo libre
+        init_velocities = np.ones(n_cars) * 28.0
+    elif density < 60:          # moderado
+        init_velocities = np.linspace(18, 10, n_cars)
+    else:                       # congestion severa
+        init_velocities = np.linspace(6, 1, n_cars)
 
     model = MicroscopicModel(
         n_cars=n_cars,
@@ -88,15 +93,12 @@ def run_microscopic_scenario(scenario_name, n_cars, road_length, final_time, dt)
         init_velocities=init_velocities
     )
 
-    t_array = np.arange(0.0, final_time + dt, dt)
+    t_array = np.arange(0, final_time + dt, dt)
     n_steps = len(t_array) - 1
 
     positions_record, velocities_record = simulate_microscopic(
-        model,
-        dt=dt,
-        n_steps=n_steps,
-        periodic=False,
-        road_length=road_length,
+        model, dt=dt, n_steps=n_steps,
+        periodic=False, road_length=road_length,
         record=True
     )
 
@@ -112,29 +114,26 @@ def run_microscopic_scenario(scenario_name, n_cars, road_length, final_time, dt)
 
 
 def compute_metrics(macro_result, micro_result):
-    """Calcula metricas comparativas entre ambos modelos."""
     macro_rho = macro_result['rho']
     micro_vels = micro_result['velocities']
 
-    # Calcular congestión (porcentaje de puntos con densidad > 75 veh/km)
-    congestion_threshold = 75.0
-    congestion_fraction = np.sum(macro_rho > congestion_threshold) / macro_rho.size
-    max_congestion_fraction = np.max(np.mean(macro_rho > congestion_threshold, axis=1))
-
     metrics = {
         'scenario': macro_result['name'],
-        'macro_avg_density': np.mean(macro_rho),
-        'macro_max_density': np.max(macro_rho),
-        'macro_min_density': np.min(macro_rho),
-        'congestion_fraction': congestion_fraction,
-        'max_congestion_fraction': max_congestion_fraction,
-        'micro_avg_velocity': np.mean(micro_vels),
-        'micro_max_velocity': np.max(micro_vels),
-        'micro_min_velocity': np.min(micro_vels),
+
+        # MACROSCÓPICO
+        'macro_avg_density': float(np.mean(macro_rho)),
+        'macro_max_density': float(np.max(macro_rho)),
+        'macro_min_density': float(np.min(macro_rho)),
+
+        # MICROSCÓPICO
+        'micro_avg_velocity': float(np.mean(micro_vels)),
+        'micro_max_velocity': float(np.max(micro_vels)),
+        'micro_min_velocity': float(np.min(micro_vels)),
         'micro_n_cars': micro_result['n_cars']
     }
 
     return metrics
+
 
 
 def plot_comparative_density_velocity(macro_result, micro_result, output_dirs, show_plots=True):
@@ -356,20 +355,12 @@ def plot_scenario_summary(all_metrics, output_dirs, show_plots=True):
 
 
 def main():
-    """
-    Ejecuta analisis comparativo entre modelos.
-
-    El modo de analisis comparativo SIEMPRE ejecuta silenciosamente sin mostrar
-    graficos individuales, solo muestra el resumen comparativo final.
-    """
-    print("\n" + "="*80)
-    print("ANALISIS COMPARATIVO: MODELO MACROSCOPICO vs MICROSCOPICO")
-    print("="*80)
+    print("\n================ COMPARATIVE ANALYSIS (MODIFIED) ================")
 
     output_dirs = create_output_directory()
-    print(f"\nResultados se guardaran en: {output_dirs['figures']}")
+    print(f"\nResultados se guardarán en: {output_dirs['figures']}")
 
-    # Parametros para modelo macroscopico
+    # Macro params
     L = 10.0
     T = 1.0
     dx = 0.1
@@ -378,97 +369,51 @@ def main():
     x = get_spatial_grid(L=L, dx=dx)
     t = get_temporal_grid(T=T, dt=dt)
 
-    # Parametros para modelo microscopico (convertir a segundos)
-    road_length = 10000.0  # 10 km en metros
-    final_time = 3600.0    # 1 hora en segundos
-    dt_micro = 1.0         # paso temporal en segundos
+    # Micro params
+    road_length = 10000.0
+    final_time = 600.0
+    dt_micro = 0.5
 
-    print(f"\nParametros de simulacion:")
-    print(f"  Macroscopico: L={L} km, T={T} h, dx={dx} km, dt={dt} h")
-    print(f"  Microscopico: L={road_length} m, T={final_time} s, dt={dt_micro} s")
-
-    # Definir escenarios comparativos
-    print("\nEjecutando escenarios comparativos (modo silencioso)...\n")
+    print(f"\nParametros micro:")
+    print(f"  Longitud carretera: {road_length} m")
+    print(f"  Tiempo final: {final_time} s")
+    print(f"  Paso dt: {dt_micro} s")
 
     scenarios = [
-        {
-            'name': 'Flujo Libre',
-            'macro_rho0': uniform_density(x, rho_value=30.0),
-            'micro_cars': 10
-        },
-        {
-            'name': 'Flujo Moderado',
-            'macro_rho0': uniform_density(x, rho_value=75.0),
-            'micro_cars': 20
-        },
-        {
-            'name': 'Congestion Severa',
-            'macro_rho0': shock_wave_scenario(x, x_shock=5.0, rho_upstream=140.0, rho_downstream=30.0),
-            'micro_cars': 30
-        }
+        {'name': 'Flujo Libre', 'macro_rho0': uniform_density(x, 30.0), 'micro_cars': 50},
+        {'name': 'Flujo Moderado', 'macro_rho0': uniform_density(x, 75.0), 'micro_cars': 400},
+        {'name': 'Congestion Severa', 'macro_rho0': shock_wave_scenario(x, 5.0, 140.0, 30.0), 'micro_cars': 900}
     ]
 
-    all_macro_results = []
-    all_micro_results = []
     all_metrics = []
 
-    for scenario in scenarios:
-        print(f"\nEscenario: {scenario['name']}")
-        print("-" * 60)
+    for sc in scenarios:
+        print(f"\n--- {sc['name']} ---")
 
-        # Ejecutar modelo macroscopico
-        macro_result = run_macroscopic_scenario(
-            scenario['name'],
-            scenario['macro_rho0'],
-            x, t
-        )
-        all_macro_results.append(macro_result)
+        macro_res = run_macroscopic_scenario(sc['name'], sc['macro_rho0'], x, t)
+        micro_res = run_microscopic_scenario(sc['name'], sc['micro_cars'], road_length, final_time, dt_micro)
 
-        # Ejecutar modelo microscopico
-        micro_result = run_microscopic_scenario(
-            scenario['name'],
-            scenario['micro_cars'],
-            road_length,
-            final_time,
-            dt_micro
-        )
-        all_micro_results.append(micro_result)
-
-        # Calcular metricas
-        metrics = compute_metrics(macro_result, micro_result)
+        metrics = compute_metrics(macro_res, micro_res)
         all_metrics.append(metrics)
 
-        print(f"    Densidad macro promedio: {metrics['macro_avg_density']:.2f} veh/km")
-        print(f"    Densidad macro maxima:   {metrics['macro_max_density']:.2f} veh/km")
-        print(f"    Velocidad micro promedio: {metrics['micro_avg_velocity']:.2f} m/s")
+        print(f"  Velocidad MICRO promedio: {metrics['micro_avg_velocity']:.2f} m/s")
 
-        # Generar graficas comparativas (sin mostrar, solo guardar)
-        plot_comparative_density_velocity(macro_result, micro_result, output_dirs, show_plots=False)
+    print("\n===================== RESUMEN DE MÉTRICAS =====================")
 
-    # Generar resumen final (ESTE SI SE MUESTRA)
-    print("\nGenerando resumen comparativo...")
-    print("-" * 60)
-    plot_scenario_summary(all_metrics, output_dirs, show_plots=True)
-
-    # Resumen de metricas
-    print("\n" + "="*80)
-    print("RESUMEN DE METRICAS")
-    print("="*80)
-
-    for metrics in all_metrics:
-        print(f"\n{metrics['scenario']}")
+    for m in all_metrics:
+        print(f"\n{m['scenario']}")
         print("-" * 60)
-        print(f"  Densidad promedio (macro):  {metrics['macro_avg_density']:.2f} veh/km")
-        print(f"  Densidad maxima (macro):    {metrics['macro_max_density']:.2f} veh/km")
-        print(f"  Densidad minima (macro):    {metrics['macro_min_density']:.2f} veh/km")
-        print(f"  Velocidad promedio (micro): {metrics['micro_avg_velocity']:.2f} m/s")
-        print(f"  Velocidad maxima (micro):   {metrics['micro_max_velocity']:.2f} m/s")
-        print(f"  Velocidad minima (micro):   {metrics['micro_min_velocity']:.2f} m/s")
-        print(f"  Numero de vehiculos:        {metrics['micro_n_cars']}")
 
-    print("\n" + "="*80)
-    print("OK Analisis comparativo completado")
-    print("="*80 + "\n")
+        print(f"  MODELO MACROSCÓPICO:")
+        print(f"    Densidad promedio: {m['macro_avg_density']:.2f} veh/km")
+        print(f"    Densidad máxima:   {m['macro_max_density']:.2f} veh/km")
+        print(f"    Densidad mínima:   {m['macro_min_density']:.2f} veh/km")
+
+        print(f"\n  MODELO MICROSCÓPICO:")
+        print(f"    Velocidad promedio: {m['micro_avg_velocity']:.2f} m/s")
+        print(f"    Velocidad máxima:   {m['micro_max_velocity']:.2f} m/s")
+        print(f"    Velocidad mínima:   {m['micro_min_velocity']:.2f} m/s")
+        print(f"    Número vehículos:   {m['micro_n_cars']}")
 
 
 if __name__ == "__main__":
