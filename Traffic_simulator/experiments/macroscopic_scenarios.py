@@ -58,7 +58,7 @@ from src.visualization.travel_time_plots import (
     plot_average_velocity,
     plot_congestion_metrics
 )
-from src.visualization.figure_navigator import FigureNavigator
+from src.visualization.figure_navigator import FigureNavigator, DashboardNavigator
 
 
 def create_output_directory(base_dir='results'):
@@ -111,158 +111,87 @@ def run_scenario(scenario_name, rho0, x, t, output_dirs, boundary='periodic', sh
     scenario_dir = os.path.join(output_dirs['figures'], safe_name)
     os.makedirs(scenario_dir, exist_ok=True)
 
-    # Crear UNA SOLA figura con 5 axes para las 5 graficas mas importantes
+    # Crear figura con grid 2x3 para mostrar todas las graficas simultaneamente (dashboard)
     print("  - Generando graficas...")
-    fig = plt.figure(figsize=(10, 6))
+    fig = plt.figure(figsize=(16, 10))
 
-    # Crear 5 axes individuales con márgenes adecuados
+    # Crear layout con 2 filas y 3 columnas (caben 5 graficas + 1 vacio)
+    gs = fig.add_gridspec(2, 3, hspace=0.3, wspace=0.3)
+
     axes_list = []
     titles_list = []
 
-    for i in range(5):
-        # Cada axis ocupa todo el espacio, pero solo uno será visible
-        ax = fig.add_axes([0.12, 0.15, 0.85, 0.70])
-        ax.set_visible(False)
-        axes_list.append(ax)
-
-    # Llenar cada subplot con su grafica correspondiente
-    # 1. Diagrama espacio-tiempo (densidad)
-    ax = axes_list[0]
-    cf = ax.contourf(x, t, rho, levels=15, cmap='coolwarm')
-    ax.set_xlabel('Posicion (km)', fontsize=9, fontweight='bold')
-    ax.set_ylabel('Tiempo (h)', fontsize=9, fontweight='bold')
-    ax.set_title('Diagrama Espacio-Tiempo (Densidad)', fontsize=10, fontweight='bold')
-    cbar1 = fig.colorbar(cf, ax=ax, label='Densidad (veh/km)')
-    ax.colorbar = cbar1
-    ax.set_visible(False)
+    # 1. Diagrama espacio-tiempo (densidad) - grande, ocupa 2 columnas
+    ax1 = fig.add_subplot(gs[0, :2])
+    cf = ax1.contourf(x, t, rho, levels=15, cmap='coolwarm')
+    ax1.set_xlabel('Posicion (km)', fontsize=10, fontweight='bold')
+    ax1.set_ylabel('Tiempo (h)', fontsize=10, fontweight='bold')
+    ax1.set_title('Diagrama Espacio-Tiempo (Densidad)', fontsize=11, fontweight='bold')
+    cbar1 = fig.colorbar(cf, ax=ax1, label='Densidad (veh/km)')
+    ax1.colorbar = cbar1
+    axes_list.append(ax1)
     titles_list.append("Diagrama Espacio-Tiempo")
 
     # 2. Densidad promedio espacial
-    ax = axes_list[1]
+    ax2 = fig.add_subplot(gs[0, 2])
     density_spatial_avg = np.mean(rho, axis=0)
-    ax.plot(x, density_spatial_avg, 'b-', linewidth=2.5)
-    ax.fill_between(x, 0, density_spatial_avg, alpha=0.3, color='blue')
-    ax.set_xlabel('Posicion (km)', fontsize=9, fontweight='bold')
-    ax.set_ylabel('Densidad Promedio (veh/km)', fontsize=9, fontweight='bold')
-    ax.set_title('Densidad Promedio Espacial', fontsize=10, fontweight='bold')
-    ax.grid(True, alpha=0.3)
-    ax.set_visible(False)
-    titles_list.append("Densidad Espacial Promedio")
+    ax2.plot(x, density_spatial_avg, 'b-', linewidth=2.5)
+    ax2.fill_between(x, 0, density_spatial_avg, alpha=0.3, color='blue')
+    ax2.set_xlabel('Posicion (km)', fontsize=10, fontweight='bold')
+    ax2.set_ylabel('Densidad Prom. (veh/km)', fontsize=10, fontweight='bold')
+    ax2.set_title('Densidad Promedio Espacial', fontsize=11, fontweight='bold')
+    ax2.grid(True, alpha=0.3)
+    axes_list.append(ax2)
+    titles_list.append("Densidad Espacial")
 
     # 3. Velocidad promedio
-    ax = axes_list[2]
+    ax3 = fig.add_subplot(gs[1, 0])
     avg_velocity = compute_average_velocity(rho)
-    ax.plot(t, avg_velocity, 'g-', linewidth=2)
-    ax.fill_between(t, 0, avg_velocity, alpha=0.3, color='green')
-    ax.set_xlabel('Tiempo (h)', fontsize=9, fontweight='bold')
-    ax.set_ylabel('Velocidad Promedio (km/h)', fontsize=9, fontweight='bold')
-    ax.set_title('Velocidad Promedio Temporal', fontsize=10, fontweight='bold')
-    ax.grid(True, alpha=0.3)
-    ax.set_visible(False)
+    ax3.plot(t, avg_velocity, 'g-', linewidth=2)
+    ax3.fill_between(t, 0, avg_velocity, alpha=0.3, color='green')
+    ax3.set_xlabel('Tiempo (h)', fontsize=10, fontweight='bold')
+    ax3.set_ylabel('Velocidad Prom. (km/h)', fontsize=10, fontweight='bold')
+    ax3.set_title('Velocidad Promedio Temporal', fontsize=11, fontweight='bold')
+    ax3.grid(True, alpha=0.3)
+    axes_list.append(ax3)
     titles_list.append("Velocidad Promedio")
 
     # 4. Tiempo de viaje
-    ax = axes_list[3]
+    ax4 = fig.add_subplot(gs[1, 1])
     travel_time = compute_travel_time(rho, x, t)
-    ax.plot(t, travel_time * 60, 'purple', linewidth=2.5)
-    ax.fill_between(t, 0, travel_time * 60, alpha=0.3, color='purple')
-    ax.set_xlabel('Tiempo (h)', fontsize=9, fontweight='bold')
-    ax.set_ylabel('Tiempo de Viaje (min)', fontsize=9, fontweight='bold')
-    ax.set_title('Evolucion del Tiempo de Viaje', fontsize=10, fontweight='bold')
-    ax.grid(True, alpha=0.3)
-    ax.set_visible(False)
+    ax4.plot(t, travel_time * 60, 'purple', linewidth=2.5)
+    ax4.fill_between(t, 0, travel_time * 60, alpha=0.3, color='purple')
+    ax4.set_xlabel('Tiempo (h)', fontsize=10, fontweight='bold')
+    ax4.set_ylabel('Tiempo de Viaje (min)', fontsize=10, fontweight='bold')
+    ax4.set_title('Evolucion del Tiempo de Viaje', fontsize=11, fontweight='bold')
+    ax4.grid(True, alpha=0.3)
+    axes_list.append(ax4)
     titles_list.append("Tiempo de Viaje")
 
     # 5. Metricas de congestión
-    ax = axes_list[4]
+    ax5 = fig.add_subplot(gs[1, 2])
     congestion_info = compute_congestion_level(rho, threshold=75.0)
     congestion_frac = congestion_info['congestion_fraction']
-    ax.plot(t, congestion_frac * 100, 'r-', linewidth=2)
-    ax.fill_between(t, 0, congestion_frac * 100, alpha=0.3, color='red')
-    ax.set_xlabel('Tiempo (h)', fontsize=9, fontweight='bold')
-    ax.set_ylabel('Porcentaje Congestionado (%)', fontsize=9, fontweight='bold')
-    ax.set_title('Metricas de Congestion', fontsize=10, fontweight='bold')
-    ax.grid(True, alpha=0.3)
-    ax.set_visible(False)
-    titles_list.append("Metricas de Congestion")
+    ax5.plot(t, congestion_frac * 100, 'r-', linewidth=2)
+    ax5.fill_between(t, 0, congestion_frac * 100, alpha=0.3, color='red')
+    ax5.set_xlabel('Tiempo (h)', fontsize=10, fontweight='bold')
+    ax5.set_ylabel('% Congestionado', fontsize=10, fontweight='bold')
+    ax5.set_title('Metricas de Congestion', fontsize=11, fontweight='bold')
+    ax5.grid(True, alpha=0.3)
+    axes_list.append(ax5)
+    titles_list.append("Congestión")
 
-    # Guardar figura completa PRIMERO
+    # Guardar figura completa
     print("  - Guardando graficas...")
-    for i, ax in enumerate(axes_list):
-        ax.set_visible(True)
     plt.savefig(os.path.join(scenario_dir, 'all_plots.png'), dpi=150, bbox_inches='tight')
-    plt.close(fig)
 
-    # LUEGO mostrar navegador interactivo (si aplica)
+    # Mostrar dashboard interactivo (si aplica)
     if show_plots:
-        # Recrear la figura para mostrar interactivamente
-        fig = plt.figure(figsize=(10, 6))
-        axes_list_display = []
-
-        # Recrear los 5 axes con márgenes adecuados
-        for i in range(5):
-            ax = fig.add_axes([0.12, 0.15, 0.85, 0.70])
-            ax.set_visible(False)
-            axes_list_display.append(ax)
-
-        # 1. Diagrama espacio-tiempo
-        ax = axes_list_display[0]
-        cf = ax.contourf(x, t, rho, levels=15, cmap='coolwarm')
-        ax.set_xlabel('Posicion (km)', fontsize=9, fontweight='bold')
-        ax.set_ylabel('Tiempo (h)', fontsize=9, fontweight='bold')
-        ax.set_title('Diagrama Espacio-Tiempo', fontsize=10, fontweight='bold')
-        cbar1 = fig.colorbar(cf, ax=ax, label='Densidad (veh/km)')
-        ax.colorbar = cbar1
-        ax.set_visible(False)
-
-        # 2. Densidad promedio espacial
-        ax = axes_list_display[1]
-        density_spatial_avg = np.mean(rho, axis=0)
-        ax.plot(x, density_spatial_avg, 'b-', linewidth=2.5)
-        ax.fill_between(x, 0, density_spatial_avg, alpha=0.3, color='blue')
-        ax.set_xlabel('Posicion (km)', fontsize=9, fontweight='bold')
-        ax.set_ylabel('Densidad Promedio (veh/km)', fontsize=9, fontweight='bold')
-        ax.set_title('Densidad Promedio Espacial', fontsize=10, fontweight='bold')
-        ax.grid(True, alpha=0.3)
-        ax.set_visible(False)
-
-        # 3. Velocidad promedio
-        ax = axes_list_display[2]
-        avg_velocity_plot = compute_average_velocity(rho)
-        ax.plot(t, avg_velocity_plot, 'g-', linewidth=2)
-        ax.fill_between(t, 0, avg_velocity_plot, alpha=0.3, color='green')
-        ax.set_xlabel('Tiempo (h)', fontsize=9, fontweight='bold')
-        ax.set_ylabel('Velocidad Promedio (km/h)', fontsize=9, fontweight='bold')
-        ax.set_title('Velocidad Promedio Temporal', fontsize=10, fontweight='bold')
-        ax.grid(True, alpha=0.3)
-        ax.set_visible(False)
-
-        # 4. Tiempo de viaje
-        ax = axes_list_display[3]
-        travel_time_plot = compute_travel_time(rho, x, t)
-        ax.plot(t, travel_time_plot * 60, 'purple', linewidth=2.5)
-        ax.fill_between(t, 0, travel_time_plot * 60, alpha=0.3, color='purple')
-        ax.set_xlabel('Tiempo (h)', fontsize=9, fontweight='bold')
-        ax.set_ylabel('Tiempo de Viaje (min)', fontsize=9, fontweight='bold')
-        ax.set_title('Evolucion del Tiempo de Viaje', fontsize=10, fontweight='bold')
-        ax.grid(True, alpha=0.3)
-        ax.set_visible(False)
-
-        # 5. Metricas de congestion
-        ax = axes_list_display[4]
-        congestion_info_plot = compute_congestion_level(rho, threshold=75.0)
-        congestion_frac_plot = congestion_info_plot['congestion_fraction']
-        ax.plot(t, congestion_frac_plot * 100, 'r-', linewidth=2)
-        ax.fill_between(t, 0, congestion_frac_plot * 100, alpha=0.3, color='red')
-        ax.set_xlabel('Tiempo (h)', fontsize=9, fontweight='bold')
-        ax.set_ylabel('Porcentaje Congestionado (%)', fontsize=9, fontweight='bold')
-        ax.set_title('Metricas de Congestion', fontsize=10, fontweight='bold')
-        ax.grid(True, alpha=0.3)
-        ax.set_visible(False)
-
-        print(f"\n  Abriendo navegador interactivo (5 graficas)...")
-        navigator = FigureNavigator(axes_list_display, title_prefix=f"Escenario: {scenario_name}")
+        print(f"\n  Abriendo dashboard (todas las metricas visibles)...")
+        navigator = DashboardNavigator(axes_list, titles=titles_list, title_prefix=f"Escenario: {scenario_name}")
         navigator.display()
+    else:
+        plt.close(fig)
     
     # Calcular métricas resumen
     avg_density = compute_average_density(rho, x)

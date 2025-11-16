@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from src.models.microscopic import MicroscopicModel
 from src.solvers.runge_kutta import simulate
 from src.visualization.spacetime_diagrams import plot_spacetime_diagram_micro
-from src.visualization.figure_navigator import FigureNavigator
+from src.visualization.figure_navigator import FigureNavigator, DashboardNavigator
 
 
 def create_output_directory(base_dir='results'):
@@ -111,93 +111,87 @@ def run_scenario(scenario_name, n_cars, road_length, final_time, dt, init_veloci
     scenario_dir = os.path.join(output_dirs['figures'], safe_name)
     os.makedirs(scenario_dir, exist_ok=True)
 
-    # Crear UNA SOLA figura con 5 axes para las 5 graficas mas importantes
+    # Crear figura con grid 2x3 para mostrar todas las graficas simultaneamente (dashboard)
     print("  - Generando graficas...")
-    fig = plt.figure(figsize=(10, 6))
+    fig = plt.figure(figsize=(16, 10))
+
+    # Crear layout con 2 filas y 3 columnas
+    gs = fig.add_gridspec(2, 3, hspace=0.3, wspace=0.3)
+
     axes_list = []
     titles_list = []
 
-    # Crear 5 axes individuales con márgenes adecuados
-    for i in range(5):
-        # Cada axis ocupa todo el espacio, pero solo uno será visible
-        ax = fig.add_axes([0.12, 0.15, 0.85, 0.70])
-        ax.set_visible(False)
-        axes_list.append(ax)
-
-    # 1. Diagrama espacio-tiempo (posiciones)
-    ax = axes_list[0]
+    # 1. Diagrama espacio-tiempo (posiciones) - grande, ocupa 2 columnas
+    ax1 = fig.add_subplot(gs[0, :2])
     for i in range(n_cars):
-        ax.plot(t_array, positions_record[:, i], linewidth=1, alpha=0.7, label=f'Vehiculo {i+1}' if i < 5 else '')
-    ax.set_xlabel('Tiempo (s)', fontsize=9, fontweight='bold')
-    ax.set_ylabel('Posicion (m)', fontsize=9, fontweight='bold')
-    ax.set_title('Diagrama Espacio-Tiempo: Posiciones de Vehiculos', fontsize=10, fontweight='bold')
-    ax.grid(True, alpha=0.3)
+        ax1.plot(t_array, positions_record[:, i], linewidth=1, alpha=0.7, label=f'Vehiculo {i+1}' if i < 5 else '')
+    ax1.set_xlabel('Tiempo (s)', fontsize=10, fontweight='bold')
+    ax1.set_ylabel('Posicion (m)', fontsize=10, fontweight='bold')
+    ax1.set_title('Diagrama Espacio-Tiempo: Posiciones de Vehiculos', fontsize=11, fontweight='bold')
+    ax1.grid(True, alpha=0.3)
     if n_cars <= 5:
-        ax.legend(fontsize=9)
-    ax.set_visible(False)
+        ax1.legend(fontsize=9)
+    axes_list.append(ax1)
     titles_list.append("Posiciones Vehiculos")
 
     # 2. Velocidad promedio
-    ax = axes_list[1]
+    ax2 = fig.add_subplot(gs[0, 2])
     avg_velocity = np.mean(velocities_record, axis=1)
-    ax.plot(t_array, avg_velocity, 'b-', linewidth=2.5)
-    ax.fill_between(t_array, 0, avg_velocity, alpha=0.3, color='blue')
-    ax.set_xlabel('Tiempo (s)', fontsize=9, fontweight='bold')
-    ax.set_ylabel('Velocidad Promedio (m/s)', fontsize=9, fontweight='bold')
-    ax.set_title('Velocidad Promedio Temporal', fontsize=10, fontweight='bold')
-    ax.grid(True, alpha=0.3)
-    ax.set_visible(False)
+    ax2.plot(t_array, avg_velocity, 'b-', linewidth=2.5)
+    ax2.fill_between(t_array, 0, avg_velocity, alpha=0.3, color='blue')
+    ax2.set_xlabel('Tiempo (s)', fontsize=10, fontweight='bold')
+    ax2.set_ylabel('Vel. Prom. (m/s)', fontsize=10, fontweight='bold')
+    ax2.set_title('Velocidad Promedio Temporal', fontsize=11, fontweight='bold')
+    ax2.grid(True, alpha=0.3)
+    axes_list.append(ax2)
     titles_list.append("Velocidad Promedio")
 
     # 3. Velocidad maxima y minima
-    ax = axes_list[2]
+    ax3 = fig.add_subplot(gs[1, 0])
     max_velocity = np.max(velocities_record, axis=1)
     min_velocity = np.min(velocities_record, axis=1)
-    ax.plot(t_array, max_velocity, 'r-', linewidth=2, label='Maxima')
-    ax.plot(t_array, min_velocity, 'b-', linewidth=2, label='Minima')
-    ax.fill_between(t_array, min_velocity, max_velocity, alpha=0.2, color='gray')
-    ax.set_xlabel('Tiempo (s)', fontsize=9, fontweight='bold')
-    ax.set_ylabel('Velocidad (m/s)', fontsize=9, fontweight='bold')
-    ax.set_title('Velocidad Maxima y Minima', fontsize=10, fontweight='bold')
-    ax.legend(fontsize=10)
-    ax.grid(True, alpha=0.3)
-    ax.set_visible(False)
+    ax3.plot(t_array, max_velocity, 'r-', linewidth=2, label='Maxima')
+    ax3.plot(t_array, min_velocity, 'b-', linewidth=2, label='Minima')
+    ax3.fill_between(t_array, min_velocity, max_velocity, alpha=0.2, color='gray')
+    ax3.set_xlabel('Tiempo (s)', fontsize=10, fontweight='bold')
+    ax3.set_ylabel('Velocidad (m/s)', fontsize=10, fontweight='bold')
+    ax3.set_title('Velocidad Maxima y Minima', fontsize=11, fontweight='bold')
+    ax3.legend(fontsize=10)
+    ax3.grid(True, alpha=0.3)
+    axes_list.append(ax3)
     titles_list.append("Vel Max/Min")
 
     # 4. Distribucion de velocidades (final)
-    ax = axes_list[3]
+    ax4 = fig.add_subplot(gs[1, 1])
     final_velocities = velocities_record[-1, :]
-    ax.hist(final_velocities, bins=max(5, n_cars//4), color='steelblue', edgecolor='black', alpha=0.7)
-    ax.axvline(np.mean(final_velocities), color='r', linestyle='--', linewidth=2, label=f'Promedio: {np.mean(final_velocities):.2f} m/s')
-    ax.set_xlabel('Velocidad (m/s)', fontsize=9, fontweight='bold')
-    ax.set_ylabel('Numero de Vehiculos', fontsize=9, fontweight='bold')
-    ax.set_title('Distribucion de Velocidades (Final)', fontsize=10, fontweight='bold')
-    ax.legend(fontsize=10)
-    ax.grid(True, alpha=0.3, axis='y')
-    ax.set_visible(False)
+    ax4.hist(final_velocities, bins=max(5, n_cars//4), color='steelblue', edgecolor='black', alpha=0.7)
+    ax4.axvline(np.mean(final_velocities), color='r', linestyle='--', linewidth=2, label=f'Prom: {np.mean(final_velocities):.2f}')
+    ax4.set_xlabel('Velocidad (m/s)', fontsize=10, fontweight='bold')
+    ax4.set_ylabel('Num. Vehiculos', fontsize=10, fontweight='bold')
+    ax4.set_title('Distribucion de Velocidades (Final)', fontsize=11, fontweight='bold')
+    ax4.legend(fontsize=9)
+    ax4.grid(True, alpha=0.3, axis='y')
+    axes_list.append(ax4)
     titles_list.append("Distribucion Velocidades")
 
     # 5. Espaciamiento promedio entre vehiculos
-    ax = axes_list[4]
+    ax5 = fig.add_subplot(gs[1, 2])
     spacing_array = []
     for t_idx in range(n_steps):
         spacings = np.diff(np.sort(positions_record[t_idx, :]))
         spacing_array.append(np.mean(spacings) if len(spacings) > 0 else 0)
-    ax.plot(t_array[:len(spacing_array)], spacing_array, 'g-', linewidth=2.5)
-    ax.fill_between(t_array[:len(spacing_array)], 0, spacing_array, alpha=0.3, color='green')
-    ax.set_xlabel('Tiempo (s)', fontsize=9, fontweight='bold')
-    ax.set_ylabel('Espaciamiento Promedio (m)', fontsize=9, fontweight='bold')
-    ax.set_title('Espaciamiento Promedio entre Vehiculos', fontsize=10, fontweight='bold')
-    ax.grid(True, alpha=0.3)
-    ax.set_visible(False)
+    ax5.plot(t_array[:len(spacing_array)], spacing_array, 'g-', linewidth=2.5)
+    ax5.fill_between(t_array[:len(spacing_array)], 0, spacing_array, alpha=0.3, color='green')
+    ax5.set_xlabel('Tiempo (s)', fontsize=10, fontweight='bold')
+    ax5.set_ylabel('Espaciamiento Prom. (m)', fontsize=10, fontweight='bold')
+    ax5.set_title('Espaciamiento Promedio entre Vehiculos', fontsize=11, fontweight='bold')
+    ax5.grid(True, alpha=0.3)
+    axes_list.append(ax5)
     titles_list.append("Espaciamiento")
 
-    # Guardar figura completa PRIMERO
+    # Guardar figura completa
     print("  - Guardando graficas...")
-    for i, ax in enumerate(axes_list):
-        ax.set_visible(True)
     plt.savefig(os.path.join(scenario_dir, 'all_plots.png'), dpi=150, bbox_inches='tight')
-    plt.close(fig)
 
     # Guardar diagrama espacio-tiempo tradicional
     print("  - Guardando diagrama espacio-tiempo...")
@@ -207,84 +201,13 @@ def run_scenario(scenario_name, n_cars, road_length, final_time, dt, init_veloci
         filename=os.path.join(scenario_dir, 'spacetime_diagram.png'),
     )
 
-    # LUEGO mostrar navegador interactivo (si aplica)
+    # Mostrar dashboard interactivo (si aplica)
     if show_plots:
-        # Recrear la figura para mostrar interactivamente
-        fig = plt.figure(figsize=(10, 6))
-        axes_list_display = []
-
-        # Recrear los 5 axes con márgenes adecuados
-        for i in range(5):
-            ax = fig.add_axes([0.12, 0.15, 0.85, 0.70])
-            ax.set_visible(False)
-            axes_list_display.append(ax)
-
-        # 1. Diagrama espacio-tiempo (posiciones)
-        ax = axes_list_display[0]
-        for i in range(n_cars):
-            ax.plot(t_array, positions_record[:, i], linewidth=1, alpha=0.7, label=f'Vehiculo {i+1}' if i < 5 else '')
-        ax.set_xlabel('Tiempo (s)', fontsize=9, fontweight='bold')
-        ax.set_ylabel('Posicion (m)', fontsize=9, fontweight='bold')
-        ax.set_title('Diagrama Espacio-Tiempo: Posiciones de Vehiculos', fontsize=10, fontweight='bold')
-        ax.grid(True, alpha=0.3)
-        if n_cars <= 5:
-            ax.legend(fontsize=9)
-        ax.set_visible(False)
-
-        # 2. Velocidad promedio
-        ax = axes_list_display[1]
-        avg_velocity = np.mean(velocities_record, axis=1)
-        ax.plot(t_array, avg_velocity, 'b-', linewidth=2.5)
-        ax.fill_between(t_array, 0, avg_velocity, alpha=0.3, color='blue')
-        ax.set_xlabel('Tiempo (s)', fontsize=9, fontweight='bold')
-        ax.set_ylabel('Velocidad Promedio (m/s)', fontsize=9, fontweight='bold')
-        ax.set_title('Velocidad Promedio Temporal', fontsize=10, fontweight='bold')
-        ax.grid(True, alpha=0.3)
-        ax.set_visible(False)
-
-        # 3. Velocidad maxima y minima
-        ax = axes_list_display[2]
-        max_velocity = np.max(velocities_record, axis=1)
-        min_velocity = np.min(velocities_record, axis=1)
-        ax.plot(t_array, max_velocity, 'r-', linewidth=2, label='Maxima')
-        ax.plot(t_array, min_velocity, 'b-', linewidth=2, label='Minima')
-        ax.fill_between(t_array, min_velocity, max_velocity, alpha=0.2, color='gray')
-        ax.set_xlabel('Tiempo (s)', fontsize=9, fontweight='bold')
-        ax.set_ylabel('Velocidad (m/s)', fontsize=9, fontweight='bold')
-        ax.set_title('Velocidad Maxima y Minima', fontsize=10, fontweight='bold')
-        ax.legend(fontsize=10)
-        ax.grid(True, alpha=0.3)
-        ax.set_visible(False)
-
-        # 4. Distribucion de velocidades (final)
-        ax = axes_list_display[3]
-        final_velocities = velocities_record[-1, :]
-        ax.hist(final_velocities, bins=max(5, n_cars//4), color='steelblue', edgecolor='black', alpha=0.7)
-        ax.axvline(np.mean(final_velocities), color='r', linestyle='--', linewidth=2, label=f'Promedio: {np.mean(final_velocities):.2f} m/s')
-        ax.set_xlabel('Velocidad (m/s)', fontsize=9, fontweight='bold')
-        ax.set_ylabel('Numero de Vehiculos', fontsize=9, fontweight='bold')
-        ax.set_title('Distribucion de Velocidades (Final)', fontsize=10, fontweight='bold')
-        ax.legend(fontsize=10)
-        ax.grid(True, alpha=0.3, axis='y')
-        ax.set_visible(False)
-
-        # 5. Espaciamiento promedio entre vehiculos
-        ax = axes_list_display[4]
-        spacing_array = []
-        for t_idx in range(n_steps):
-            spacings = np.diff(np.sort(positions_record[t_idx, :]))
-            spacing_array.append(np.mean(spacings) if len(spacings) > 0 else 0)
-        ax.plot(t_array[:len(spacing_array)], spacing_array, 'g-', linewidth=2.5)
-        ax.fill_between(t_array[:len(spacing_array)], 0, spacing_array, alpha=0.3, color='green')
-        ax.set_xlabel('Tiempo (s)', fontsize=9, fontweight='bold')
-        ax.set_ylabel('Espaciamiento Promedio (m)', fontsize=9, fontweight='bold')
-        ax.set_title('Espaciamiento Promedio entre Vehiculos', fontsize=10, fontweight='bold')
-        ax.grid(True, alpha=0.3)
-        ax.set_visible(False)
-
-        print(f"\n  Abriendo navegador interactivo (5 graficas)...")
-        navigator = FigureNavigator(axes_list_display, title_prefix=f"Escenario: {scenario_name}")
+        print(f"\n  Abriendo dashboard (todas las metricas visibles)...")
+        navigator = DashboardNavigator(axes_list, titles=titles_list, title_prefix=f"Escenario: {scenario_name}")
         navigator.display()
+    else:
+        plt.close(fig)
 
     # Calcular y mostrar metricas
     print(f"\n  Metricas del escenario:")

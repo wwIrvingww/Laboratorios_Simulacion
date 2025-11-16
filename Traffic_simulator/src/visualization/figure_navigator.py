@@ -5,6 +5,8 @@ Navegador de Figuras Interactivo.
 
 Permite navegar entre multiples figuras usando flechas del teclado.
 Una sola ventana por escenario.
+Tambien proporciona un DashboardNavigator para mostrar multiples graficas
+simultaneamente en un dashboard.
 """
 
 import matplotlib.pyplot as plt
@@ -88,6 +90,52 @@ class FigureNavigator:
     def display(self):
         """Muestra la figura con navegacion."""
         self.show_current()
+        plt.show()
+
+
+class DashboardNavigator:
+    """Maneja un dashboard con multiples graficas visibles simultaneamente."""
+
+    def __init__(self, axes_list, titles=None, title_prefix="", figsize=(16, 12)):
+        """
+        Inicializa el dashboard con multiples graficas en grid.
+
+        Parametros:
+            axes_list (list): Lista de objetos matplotlib axes ya configurados
+            titles (list): Lista de titulos para cada grafica
+            title_prefix (str): Prefijo para el titulo del dashboard
+            figsize (tuple): Tamaño de la figura
+        """
+        self.axes_list = axes_list
+        self.title_prefix = title_prefix
+        self.total_figures = len(axes_list)
+        self.titles = titles if titles else [f"Grafica {i+1}" for i in range(self.total_figures)]
+
+        if self.total_figures == 0:
+            raise ValueError("Lista de graficas vacia")
+
+        # Obtener la figura de los axes
+        self.fig = axes_list[0].figure if axes_list else None
+
+        if self.fig is None:
+            raise ValueError("No se pudo obtener la figura de los axes")
+
+        # Conectar evento de teclado a la figura
+        self.fig.canvas.mpl_connect('key_press_event', self.on_key_press)
+
+    def on_key_press(self, event: KeyEvent):
+        """Maneja eventos de teclado."""
+        if event.key == 'escape' or event.key == 'q':
+            plt.close(self.fig)
+
+    def display(self):
+        """Muestra el dashboard con todas las graficas."""
+        self.fig.suptitle(
+            f"{self.title_prefix}\nDashboard - Todas las métricas\nPresiona ESC para salir",
+            fontsize=14,
+            fontweight='bold'
+        )
+        self.fig.canvas.draw()
         plt.show()
 
 
