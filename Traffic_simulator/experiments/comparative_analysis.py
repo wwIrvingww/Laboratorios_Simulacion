@@ -32,6 +32,7 @@ from src.utils.initial_conditions import (
 )
 from src.visualization.density_maps import plot_density_heatmap
 from src.visualization.spacetime_diagrams import plot_spacetime_diagram_macro, plot_spacetime_diagram_micro
+from src.visualization.figure_navigator import DashboardNavigator
 
 
 def create_output_directory(base_dir='results'):
@@ -220,94 +221,101 @@ def plot_comparative_density_velocity(macro_result, micro_result, output_dirs, s
 
 def plot_scenario_summary(all_metrics, output_dirs, show_plots=True):
     """
-    Genera resumen comparativo de todos los escenarios.
-    Muestra 3 graficas claras y entendibles comparando ambos modelos.
+    Genera resumen comparativo de todos los escenarios como un DASHBOARD.
+    Muestra 3 graficas comparando ambos modelos lado a lado.
 
     Parametros:
-        show_plots: Si True, muestra la grafica; si False, solo guarda
+        show_plots: Si True, muestra el dashboard; si False, solo guarda
     """
-    fig, axes = plt.subplots(3, 1, figsize=(11, 10))
+    # Crear figura con grid 2x2 para dashboard
+    fig = plt.figure(figsize=(16, 10))
+    gs = fig.add_gridspec(2, 2, hspace=0.3, wspace=0.25)
 
     scenarios = [m['scenario'] for m in all_metrics]
     x_pos = np.arange(len(scenarios))
     width = 0.35  # Ancho de las barras
 
     # Parámetros comunes
-    v_max = 100  # km/h
     rho_max = 150  # veh/km
     macro_densities = [m['macro_avg_density'] for m in all_metrics]
-    macro_velocities = [v_max * (1 - rho / rho_max) for rho in macro_densities]
     micro_velocities = [m['micro_avg_velocity'] * 3.6 for m in all_metrics]
 
-    # Crear etiquetas seguras
-    labels = []
-    for i, scenario in enumerate(scenarios):
-        if ':' in scenario:
-            label = scenario.split(':')[1].strip()
-        else:
-            label = scenario
-        labels.append(f"E{i+1}: {label}")
+    # Usar velocidad máxima real del modelo microscópico
+    v_max = max([m['micro_max_velocity'] * 3.6 for m in all_metrics]) * 1.1  # 10% de margen
 
-    # ===== GRAFICA 1: VELOCIDAD PROMEDIO =====
-    ax = axes[0]
-    bars1 = ax.bar(x_pos - width/2, macro_velocities, width, label='Macroscopico',
+    # Calcular velocidades macro basadas en Greenshields
+    macro_velocities = [v_max * (1 - rho / rho_max) for rho in macro_densities]
+
+    # Crear etiquetas simples
+    labels = [f"E{i+1}" for i in range(len(scenarios))]
+
+    axes_list = []
+    titles_list = []
+
+    # ===== GRAFICA 1: VELOCIDAD PROMEDIO (arriba-izquierda, ocupa 2 filas) =====
+    ax1 = fig.add_subplot(gs[:, 0])
+    bars1 = ax1.bar(x_pos - width/2, macro_velocities, width, label='Macroscopico',
                    alpha=0.8, color='steelblue', edgecolor='black', linewidth=1.5)
-    bars2 = ax.bar(x_pos + width/2, micro_velocities, width, label='Microscopico',
+    bars2 = ax1.bar(x_pos + width/2, micro_velocities, width, label='Microscopico',
                    alpha=0.8, color='lightcoral', edgecolor='black', linewidth=1.5)
 
     # Agregar valores en las barras
     for bar in bars1:
         height = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2., height,
-               f'{height:.1f}', ha='center', va='bottom', fontsize=8)
+        ax1.text(bar.get_x() + bar.get_width()/2., height,
+               f'{height:.1f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
 
     for bar in bars2:
         height = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2., height,
-               f'{height:.1f}', ha='center', va='bottom', fontsize=8)
+        ax1.text(bar.get_x() + bar.get_width()/2., height,
+               f'{height:.1f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
 
-    ax.set_ylabel('Velocidad Promedio (km/h)', fontsize=10, fontweight='bold')
-    ax.set_title('1. Velocidad Promedio por Escenario', fontsize=11, fontweight='bold')
-    ax.set_xticks(x_pos)
-    ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=9)
-    ax.legend(fontsize=10, loc='upper right')
-    ax.grid(True, alpha=0.3, axis='y')
-    ax.set_ylim(0, 120)
+    ax1.set_ylabel('Velocidad Promedio (km/h)', fontsize=11, fontweight='bold')
+    ax1.set_title('Velocidad Promedio por Escenario', fontsize=12, fontweight='bold')
+    ax1.set_xticks(x_pos)
+    ax1.set_xticklabels(labels, fontsize=11, fontweight='bold')
+    ax1.legend(fontsize=11, loc='upper right')
+    ax1.grid(True, alpha=0.3, axis='y')
+    ax1.set_ylim(0, v_max * 1.1)
+    axes_list.append(ax1)
+    titles_list.append("Velocidad Promedio")
 
-    # ===== GRAFICA 2: DENSIDAD PROMEDIO (Macro vs Micro estimada) =====
-    ax = axes[1]
+    # ===== GRAFICA 2: DENSIDAD PROMEDIO (arriba-derecha) =====
+    ax2 = fig.add_subplot(gs[0, 1])
 
     # Micro: estimar densidad equivalente usando Greenshields inverso
-    # rho = rho_max * (1 - v / v_max)
-    micro_densities = [rho_max * (1 - v / v_max) for v in micro_velocities]
+    # Asegurarse de que no sea negativa (limitar a rango válido)
+    micro_densities = [max(0, rho_max * (1 - v / v_max)) for v in micro_velocities]
 
-    bars1 = ax.bar(x_pos - width/2, macro_densities, width, label='Macroscopico',
+    bars1 = ax2.bar(x_pos - width/2, macro_densities, width, label='Macroscopico',
                    alpha=0.8, color='steelblue', edgecolor='black', linewidth=1.5)
-    bars2 = ax.bar(x_pos + width/2, micro_densities, width, label='Microscopico (estimada)',
+    bars2 = ax2.bar(x_pos + width/2, micro_densities, width, label='Microscopico (est.)',
                    alpha=0.8, color='lightcoral', edgecolor='black', linewidth=1.5)
 
     # Agregar valores en las barras
     for bar in bars1:
         height = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2., height,
-               f'{height:.1f}', ha='center', va='bottom', fontsize=8)
+        ax2.text(bar.get_x() + bar.get_width()/2., height,
+               f'{height:.0f}', ha='center', va='bottom', fontsize=8, fontweight='bold')
 
     for bar in bars2:
         height = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2., height,
-               f'{height:.1f}', ha='center', va='bottom', fontsize=8)
+        ax2.text(bar.get_x() + bar.get_width()/2., height,
+               f'{height:.0f}', ha='center', va='bottom', fontsize=8, fontweight='bold')
 
-    ax.axhline(y=75, color='orange', linestyle='--', linewidth=2, alpha=0.7, label='Umbral congestión (75)')
-    ax.set_ylabel('Densidad Promedio (veh/km)', fontsize=10, fontweight='bold')
-    ax.set_title('2. Densidad Promedio por Escenario', fontsize=11, fontweight='bold')
-    ax.set_xticks(x_pos)
-    ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=9)
-    ax.legend(fontsize=10, loc='upper right')
-    ax.grid(True, alpha=0.3, axis='y')
-    ax.set_ylim(0, 160)
+    ax2.axhline(y=75, color='orange', linestyle='--', linewidth=2, alpha=0.7, label='Umbral (75)')
+    ax2.set_ylabel('Densidad Promedio (veh/km)', fontsize=11, fontweight='bold')
+    ax2.set_title('Densidad Promedio por Escenario', fontsize=12, fontweight='bold')
+    ax2.set_xticks(x_pos)
+    ax2.set_xticklabels(labels, fontsize=11, fontweight='bold')
+    ax2.legend(fontsize=10, loc='upper right')
+    ax2.grid(True, alpha=0.3, axis='y')
+    ax2.set_ylim(0, 160)
+    axes_list.append(ax2)
+    titles_list.append("Densidad Promedio")
 
-    # ===== GRAFICA 3: FLUJO VEHICULAR (Densidad × Velocidad) =====
-    ax = axes[2]
+    # ===== GRAFICA 3: FLUJO VEHICULAR (abajo-derecha) =====
+    ax3 = fig.add_subplot(gs[1, 1])
 
     # Flujo = densidad × velocidad (en unidades consistentes)
     # Macro: q = rho (veh/km) * v (km/h) = veh/h
@@ -316,40 +324,44 @@ def plot_scenario_summary(all_metrics, output_dirs, show_plots=True):
     # Micro: q estimado = rho (veh/km) * v (km/h) = veh/h
     micro_flow = [rho * v for rho, v in zip(micro_densities, micro_velocities)]
 
-    bars1 = ax.bar(x_pos - width/2, macro_flow, width, label='Macroscopico',
+    bars1 = ax3.bar(x_pos - width/2, macro_flow, width, label='Macroscopico',
                    alpha=0.8, color='steelblue', edgecolor='black', linewidth=1.5)
-    bars2 = ax.bar(x_pos + width/2, micro_flow, width, label='Microscopico',
+    bars2 = ax3.bar(x_pos + width/2, micro_flow, width, label='Microscopico',
                    alpha=0.8, color='lightcoral', edgecolor='black', linewidth=1.5)
 
     # Agregar valores en las barras
     for bar in bars1:
         height = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2., height,
-               f'{height:.1f}', ha='center', va='bottom', fontsize=8)
+        ax3.text(bar.get_x() + bar.get_width()/2., height,
+               f'{height:.0f}', ha='center', va='bottom', fontsize=8, fontweight='bold')
 
     for bar in bars2:
         height = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2., height,
-               f'{height:.1f}', ha='center', va='bottom', fontsize=8)
+        ax3.text(bar.get_x() + bar.get_width()/2., height,
+               f'{height:.0f}', ha='center', va='bottom', fontsize=8, fontweight='bold')
 
-    ax.set_ylabel('Flujo Vehicular (veh/h)', fontsize=10, fontweight='bold')
-    ax.set_xlabel('Escenario', fontsize=10, fontweight='bold')
-    ax.set_title('3. Flujo Vehicular por Escenario', fontsize=11, fontweight='bold')
-    ax.set_xticks(x_pos)
-    ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=9)
-    ax.legend(fontsize=10, loc='upper right')
-    ax.grid(True, alpha=0.3, axis='y')
+    ax3.set_ylabel('Flujo Vehicular (veh/h)', fontsize=11, fontweight='bold')
+    ax3.set_xlabel('Escenario', fontsize=11, fontweight='bold')
+    ax3.set_title('Flujo Vehicular por Escenario', fontsize=12, fontweight='bold')
+    ax3.set_xticks(x_pos)
+    ax3.set_xticklabels(labels, fontsize=11, fontweight='bold')
+    ax3.legend(fontsize=10, loc='upper right')
+    ax3.grid(True, alpha=0.3, axis='y')
+    axes_list.append(ax3)
+    titles_list.append("Flujo Vehicular")
 
-    plt.suptitle('Resumen Comparativo: Modelos Macroscópico vs Microscópico',
-                 fontsize=12, fontweight='bold', y=0.995)
-    plt.tight_layout()
+    # Guardar figura
     filename = os.path.join(output_dirs['figures'], 'comparative_summary.png')
     plt.savefig(filename, dpi=300, bbox_inches='tight')
 
+    # Mostrar dashboard interactivo (si aplica)
     if show_plots:
-        plt.show()
-
-    plt.close()
+        print(f"\n  Abriendo dashboard comparativo (3 metricas principales)...")
+        navigator = DashboardNavigator(axes_list, titles=titles_list,
+                                      title_prefix="ANALISIS COMPARATIVO: Modelos Macroscopico vs Microscopico")
+        navigator.display()
+    else:
+        plt.close(fig)
 
     print(f"OK Resumen comparativo guardado")
 
@@ -414,6 +426,12 @@ def main():
         print(f"    Velocidad máxima:   {m['micro_max_velocity']:.2f} m/s")
         print(f"    Velocidad mínima:   {m['micro_min_velocity']:.2f} m/s")
         print(f"    Número vehículos:   {m['micro_n_cars']}")
+
+    # Generar dashboard comparativo final
+    print("\n\n" + "="*70)
+    print("Generando dashboard comparativo...")
+    print("="*70)
+    plot_scenario_summary(all_metrics, output_dirs, show_plots=True)
 
 
 if __name__ == "__main__":
