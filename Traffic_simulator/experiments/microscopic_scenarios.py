@@ -1,27 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Escenarios de simulacion para el modelo microscopico (IDM).
-
-Este modulo define escenarios reproducibles para:
-  - Flujo estable de trafico
-  - Flujo congestionado
-  - Flujo mixto
-  - Flujo con perturbacion gaussiana
-  - Flujo con perturbacion sinusoidal
-  - Flujo con dos pulsos
-  - Flujo con gradiente lineal
-
-Los resultados se guardan como diagramas espacio-tiempo en la carpeta
-results/figures/.
-"""
 
 import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Anadir el directorio raiz al path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.models.microscopic import MicroscopicModel
@@ -31,7 +15,6 @@ from src.visualization.figure_navigator import FigureNavigator, DashboardNavigat
 
 
 def create_output_directory(base_dir='results'):
-    """Crea estructura de directorios para resultados."""
     dirs = {
         'figures': os.path.join(base_dir, 'figures', 'microscopic'),
         'metrics': os.path.join(base_dir, 'metrics')
@@ -44,47 +27,28 @@ def create_output_directory(base_dir='results'):
 
 
 def create_default_params():
-    """
-    Parametros por defecto para el modelo IDM en los escenarios microscopicos.
-    """
     return {
-        "v0": 30.0,   # velocidad deseada (m/s)
-        "a": 1.2,     # aceleracion maxima (m/s^2)
-        "b": 1.5,     # deceleracion comoda (m/s^2)
-        "T": 1.5,     # tiempo de reaccion (s)
-        "s0": 2.0,    # distancia minima (m)
-        "s_min": 2.0  # separacion minima numerica (hard-core)
+        "v0": 30.0,
+        "a": 1.2,
+        "b": 1.5,
+        "T": 1.5,
+        "s0": 2.0,
+        "s_min": 2.0
     }
 
 
 def run_scenario(scenario_name, n_cars, road_length, final_time, dt, init_velocities_func, output_dirs, show_plots=True):
-    """
-    Ejecuta un escenario microscopico completo con visualizaciones interactivas.
-
-    Parametros:
-        scenario_name: Nombre del escenario
-        n_cars: Numero de vehiculos
-        road_length: Longitud de la carretera (m)
-        final_time: Tiempo total de simulacion (s)
-        dt: Paso temporal (s)
-        init_velocities_func: Funcion que genera velocidades iniciales
-        output_dirs: Diccionario con rutas de salida
-        show_plots: Si True, muestra navegador interactivo; si False, solo guarda
-    """
     print(f"\n{'='*60}")
     print(f"Ejecutando escenario: {scenario_name}")
     print(f"{'='*60}")
 
     params = create_default_params()
 
-    # Tiempo y pasos
     t_array = np.arange(0.0, final_time + dt, dt)
     n_steps = len(t_array) - 1
 
-    # Posiciones iniciales: distribucion uniforme en la carretera
     init_positions = np.linspace(0.0, road_length * 0.9, n_cars)
 
-    # Velocidades iniciales
     init_velocities = init_velocities_func(n_cars, params["v0"])
 
     model = MicroscopicModel(
@@ -96,7 +60,6 @@ def run_scenario(scenario_name, n_cars, road_length, final_time, dt, init_veloci
     )
 
     print("  - Simulando...")
-    # Simulacion con RK4
     positions_record, velocities_record = simulate(
         model,
         dt=dt,
@@ -106,22 +69,17 @@ def run_scenario(scenario_name, n_cars, road_length, final_time, dt, init_veloci
         record=True,
     )
 
-    # Crear subdirectorio para este escenario
     safe_name = scenario_name.replace(' ', '_').replace(':', '').replace('/', '_').lower()
     scenario_dir = os.path.join(output_dirs['figures'], safe_name)
     os.makedirs(scenario_dir, exist_ok=True)
 
-    # Crear figura con grid 2x3 para mostrar todas las graficas simultaneamente (dashboard)
     print("  - Generando graficas...")
     fig = plt.figure(figsize=(16, 10))
 
-    # Crear layout con 2 filas y 3 columnas
     gs = fig.add_gridspec(2, 3, hspace=0.3, wspace=0.3)
 
     axes_list = []
     titles_list = []
-
-    # 1. Diagrama espacio-tiempo (posiciones) - grande, ocupa 2 columnas
     ax1 = fig.add_subplot(gs[0, :2])
     for i in range(n_cars):
         ax1.plot(t_array, positions_record[:, i], linewidth=1, alpha=0.7, label=f'Vehiculo {i+1}' if i < 5 else '')
@@ -134,7 +92,6 @@ def run_scenario(scenario_name, n_cars, road_length, final_time, dt, init_veloci
     axes_list.append(ax1)
     titles_list.append("Posiciones Vehiculos")
 
-    # 2. Velocidad promedio
     ax2 = fig.add_subplot(gs[0, 2])
     avg_velocity = np.mean(velocities_record, axis=1)
     ax2.plot(t_array, avg_velocity, 'b-', linewidth=2.5)
@@ -146,7 +103,6 @@ def run_scenario(scenario_name, n_cars, road_length, final_time, dt, init_veloci
     axes_list.append(ax2)
     titles_list.append("Velocidad Promedio")
 
-    # 3. Velocidad maxima y minima
     ax3 = fig.add_subplot(gs[1, 0])
     max_velocity = np.max(velocities_record, axis=1)
     min_velocity = np.min(velocities_record, axis=1)
@@ -161,7 +117,6 @@ def run_scenario(scenario_name, n_cars, road_length, final_time, dt, init_veloci
     axes_list.append(ax3)
     titles_list.append("Vel Max/Min")
 
-    # 4. Distribucion de velocidades (final)
     ax4 = fig.add_subplot(gs[1, 1])
     final_velocities = velocities_record[-1, :]
     ax4.hist(final_velocities, bins=max(5, n_cars//4), color='steelblue', edgecolor='black', alpha=0.7)
@@ -174,7 +129,6 @@ def run_scenario(scenario_name, n_cars, road_length, final_time, dt, init_veloci
     axes_list.append(ax4)
     titles_list.append("Distribucion Velocidades")
 
-    # 5. Espaciamiento promedio entre vehiculos
     ax5 = fig.add_subplot(gs[1, 2])
     spacing_array = []
     for t_idx in range(n_steps):
@@ -189,11 +143,9 @@ def run_scenario(scenario_name, n_cars, road_length, final_time, dt, init_veloci
     axes_list.append(ax5)
     titles_list.append("Espaciamiento")
 
-    # Guardar figura completa
     print("  - Guardando graficas...")
     plt.savefig(os.path.join(scenario_dir, 'all_plots.png'), dpi=150, bbox_inches='tight')
 
-    # Guardar diagrama espacio-tiempo tradicional
     print("  - Guardando diagrama espacio-tiempo...")
     plot_spacetime_diagram_micro(
         positions_record,
@@ -201,7 +153,6 @@ def run_scenario(scenario_name, n_cars, road_length, final_time, dt, init_veloci
         filename=os.path.join(scenario_dir, 'spacetime_diagram.png'),
     )
 
-    # Mostrar dashboard interactivo (si aplica)
     if show_plots:
         print(f"\n  Abriendo dashboard (todas las metricas visibles)...")
         navigator = DashboardNavigator(axes_list, titles=titles_list, title_prefix=f"Escenario: {scenario_name}")
@@ -209,7 +160,6 @@ def run_scenario(scenario_name, n_cars, road_length, final_time, dt, init_veloci
     else:
         plt.close(fig)
 
-    # Calcular y mostrar metricas
     print(f"\n  Metricas del escenario:")
     print(f"    - Numero de vehiculos: {n_cars}")
     print(f"    - Longitud carretera: {road_length} m")
@@ -228,14 +178,6 @@ def run_scenario(scenario_name, n_cars, road_length, final_time, dt, init_veloci
 
 
 def main():
-    """
-    Ejecuta escenarios microscopicos.
-
-    Parametros de linea de comandos:
-      - Sin argumentos: ejecuta TODOS los escenarios
-      - --scenario N: ejecuta solo el escenario N (1-7)
-      - --silent: ejecuta sin mostrar graficos interactivos (solo guarda archivos)
-    """
     import argparse
 
     parser = argparse.ArgumentParser(description='Simulacion microscopica de trafico vehicular')
@@ -243,7 +185,6 @@ def main():
     parser.add_argument('--silent', action='store_true', help='Modo silencioso (sin mostrar graficos)')
     args = parser.parse_args()
 
-    # Determinar si mostrar graficos interactivos
     show_plots = not args.silent
 
     print("\n" + "="*80)
@@ -255,7 +196,6 @@ def main():
     output_dirs = create_output_directory()
     print(f"\nResultados se guardaran en: {output_dirs['figures']}")
 
-    # Parametros comunes
     road_length = 800.0
     final_time = 60.0
     dt = 0.1
@@ -265,7 +205,6 @@ def main():
     print(f"  - Tiempo final: {final_time} s")
     print(f"  - Paso temporal: {dt} s")
 
-    # Definir escenarios con funciones lambda para velocidades iniciales
     scenarios_list = [
         {
             'name': 'Escenario 1: Flujo Libre',
@@ -304,7 +243,6 @@ def main():
         }
     ]
 
-    # Determinar que escenarios ejecutar
     if args.scenario is not None:
         if args.scenario < 1 or args.scenario > 7:
             print(f"\nError: Escenario {args.scenario} no valido. Debe estar entre 1 y 7.")
@@ -315,7 +253,6 @@ def main():
 
     print(f"\nEjecutando {len(scenarios_to_run)} escenarios...\n")
 
-    # Ejecutar escenarios
     for scenario_num in scenarios_to_run:
         scenario = scenarios_list[scenario_num - 1]
         print(f"\n[{scenario_num}/7] {scenario['name']}")

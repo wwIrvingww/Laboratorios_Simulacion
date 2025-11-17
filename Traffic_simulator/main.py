@@ -5,14 +5,12 @@ import importlib.util
 
 
 def print_header(title):
-    """Imprime un encabezado formateado."""
     print("\n" + "=" * 80)
     print(title.center(80))
     print("=" * 80)
 
 
 def print_menu():
-    """Imprime el menu de opciones."""
     print("\n" + "-" * 80)
     print("MENU DE EXPERIMENTOS - SIMULACION DE TRAFICO VEHICULAR".center(80))
     print("-" * 80)
@@ -26,7 +24,6 @@ def print_menu():
 
 
 def get_experiment_info():
-    """Obtiene informacion sobre los experimentos disponibles."""
     experiments = {
         '1': {
             'name': 'Escenarios Macroscopicos',
@@ -58,7 +55,6 @@ def get_experiment_info():
 
 
 def check_file_exists(filepath):
-    """Verifica si el archivo del experimento existe."""
     if not os.path.exists(filepath):
         print(f"\nError: Archivo no encontrado - {filepath}")
         return False
@@ -66,20 +62,13 @@ def check_file_exists(filepath):
 
 
 def run_experiment(filepath, scenario=None):
-    """
-    Ejecuta un experimento Python.
-
-    Parametros:
-        filepath: Ruta del archivo a ejecutar
-        scenario: Numero de escenario opcional (1-7) para opciones 1 y 2
-    """
+    # Ejecuta un experimento Python
     try:
         print(f"\nEjecutando: {filepath}\n")
         print("=" * 80)
 
         cmd = [sys.executable, filepath]
 
-        # Agregar argumentos de escenario si aplica
         if scenario is not None:
             cmd.extend(['--scenario', str(scenario)])
 
@@ -104,7 +93,6 @@ def run_experiment(filepath, scenario=None):
 
 
 def show_experiment_details(choice, experiments):
-    """Muestra detalles del experimento seleccionado."""
     if choice not in experiments:
         return False
 
@@ -119,7 +107,6 @@ def show_experiment_details(choice, experiments):
 
 
 def ask_scenario_selection():
-    """Pregunta al usuario que escenario desea ejecutar."""
     print(f"\n{'-'*80}")
     print("SELECCIONAR ESCENARIO")
     print(f"{'-'*80}\n")
@@ -146,14 +133,12 @@ def ask_scenario_selection():
         return None
 
     if choice == '0':
-        return None  # None significa ejecutar todos
+        return None
 
     return int(choice)
 
 
 def main():
-    """Funcion principal que ejecuta el menu interactivo."""
-
     os.chdir(os.path.dirname(os.path.abspath(__file__)) or '.')
 
     print_header("SIMULADOR DE TRAFICO VEHICULAR")
@@ -179,26 +164,19 @@ def main():
             print("\nError: Opcion no valida. Por favor, elige un numero entre 0 y 5.")
             continue
 
-        # Mostrar detalles del experimento
         show_experiment_details(choice, experiments)
 
         exp_file = experiments[choice]['file']
 
-        # Verificar que el archivo existe
         if not check_file_exists(exp_file):
             print("\nPresiona Enter para volver al menu...")
             input()
             continue
 
-        # Para opciones 1 y 2 (escenarios), pedir seleccion de escenario
         scenario = None
         if choice in ['1', '2']:
             scenario = ask_scenario_selection()
-            if scenario is None and choice in ['1', '2']:
-                # None significa ejecutar todos
-                scenario = None
 
-        # Pedir confirmacion
         print(f"\nDeseas ejecutar este experimento? (s/n): ", end='')
         confirm = input().strip().lower()
 
@@ -208,7 +186,6 @@ def main():
             input()
             continue
 
-        # Ejecutar el experimento (pasar scenario si aplica)
         success = run_experiment(exp_file, scenario=scenario)
 
         print("\nPresiona Enter para volver al menu...")

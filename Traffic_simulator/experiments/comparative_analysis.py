@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Analisis Comparativo entre Modelos Macroscopico y Microscopico.
-
-Este script ejecuta simulaciones de los dos modelos para los mismos escenarios
-y compara sus resultados, generando graficas comparativas de desempeno.
-"""
 
 import os
 import sys
@@ -13,7 +7,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
-# Anadir el directorio raiz al path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.models.macroscopic import simulate_traffic_flow
@@ -36,7 +29,6 @@ from src.visualization.figure_navigator import DashboardNavigator
 
 
 def create_output_directory(base_dir='results'):
-    """Crea estructura de directorios para resultados comparativos."""
     dirs = {
         'figures': os.path.join(base_dir, 'figures', 'comparative'),
         'metrics': os.path.join(base_dir, 'metrics')
@@ -49,7 +41,6 @@ def create_output_directory(base_dir='results'):
 
 
 def run_macroscopic_scenario(scenario_name, rho0, x, t):
-    """Ejecuta un escenario macroscopico y retorna resultados."""
     print(f"  - Ejecutando modelo macroscopico...")
 
     results = simulate_traffic_flow(rho0, x, t, boundary='periodic')
@@ -138,22 +129,12 @@ def compute_metrics(macro_result, micro_result):
 
 
 def plot_comparative_density_velocity(macro_result, micro_result, output_dirs, show_plots=True):
-    """
-    Genera graficas comparativas entre modelos macroscopico y microscopico.
-    Muestra metricas equivalentes para comparacion directa.
-
-    Parametros:
-        show_plots: Si True, muestra la grafica; si False, solo guarda
-    """
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
 
-    # ===== FILA 1: Densidad/Velocidad promedio temporal =====
-
-    # 1. Densidad promedio espacial (macro)
     ax = axes[0, 0]
     t = macro_result['t']
     rho = macro_result['rho']
-    rho_spatial_avg = np.mean(rho, axis=1)  # promedio espacial en el tiempo
+    rho_spatial_avg = np.mean(rho, axis=1)
 
     ax.plot(t, rho_spatial_avg, 'b-', linewidth=2.5)
     ax.fill_between(t, 0, rho_spatial_avg, alpha=0.3, color='blue')
@@ -164,11 +145,10 @@ def plot_comparative_density_velocity(macro_result, micro_result, output_dirs, s
     ax.grid(True, alpha=0.3)
     ax.legend()
 
-    # 2. Velocidad promedio temporal (micro)
     ax = axes[0, 1]
     t_micro = micro_result['t']
     vels = micro_result['velocities']
-    vel_temporal_avg = np.mean(vels, axis=1)  # promedio en los vehiculos
+    vel_temporal_avg = np.mean(vels, axis=1)
 
     ax.plot(t_micro, vel_temporal_avg, 'g-', linewidth=2.5)
     ax.fill_between(t_micro, 0, vel_temporal_avg, alpha=0.3, color='green')
@@ -177,12 +157,9 @@ def plot_comparative_density_velocity(macro_result, micro_result, output_dirs, s
     ax.set_title('Microscopico: Velocidad Promedio Temporal', fontsize=10, fontweight='bold')
     ax.grid(True, alpha=0.3)
 
-    # ===== FILA 2: Distribucion espacial/por vehiculo =====
-
-    # 3. Densidad promedio espacial (macro)
     ax = axes[1, 0]
     x = macro_result['x']
-    rho_spatial = np.mean(rho, axis=0)  # promedio temporal en el espacio
+    rho_spatial = np.mean(rho, axis=0)
 
     ax.plot(x, rho_spatial, 'b-', linewidth=2.5)
     ax.fill_between(x, 0, rho_spatial, alpha=0.3, color='blue')
@@ -193,9 +170,8 @@ def plot_comparative_density_velocity(macro_result, micro_result, output_dirs, s
     ax.grid(True, alpha=0.3)
     ax.legend()
 
-    # 4. Velocidad promedio por vehiculo (micro)
     ax = axes[1, 1]
-    vel_avg_per_car = np.mean(vels, axis=0)  # promedio temporal por vehiculo
+    vel_avg_per_car = np.mean(vels, axis=0)
     n_cars = vels.shape[1]
 
     ax.bar(range(n_cars), vel_avg_per_car, alpha=0.7, color='green', edgecolor='black')
@@ -220,46 +196,32 @@ def plot_comparative_density_velocity(macro_result, micro_result, output_dirs, s
 
 
 def plot_scenario_summary(all_metrics, output_dirs, show_plots=True):
-    """
-    Genera resumen comparativo de todos los escenarios como un DASHBOARD.
-    Muestra 3 graficas comparando ambos modelos lado a lado.
-
-    Parametros:
-        show_plots: Si True, muestra el dashboard; si False, solo guarda
-    """
-    # Crear figura con grid 2x2 para dashboard
     fig = plt.figure(figsize=(16, 10))
     gs = fig.add_gridspec(2, 2, hspace=0.3, wspace=0.25)
 
     scenarios = [m['scenario'] for m in all_metrics]
     x_pos = np.arange(len(scenarios))
-    width = 0.35  # Ancho de las barras
+    width = 0.35
 
-    # Parámetros comunes
-    rho_max = 150  # veh/km
+    rho_max = 150
     macro_densities = [m['macro_avg_density'] for m in all_metrics]
     micro_velocities = [m['micro_avg_velocity'] * 3.6 for m in all_metrics]
 
-    # Usar velocidad máxima real del modelo microscópico
-    v_max = max([m['micro_max_velocity'] * 3.6 for m in all_metrics]) * 1.1  # 10% de margen
+    v_max = max([m['micro_max_velocity'] * 3.6 for m in all_metrics]) * 1.1
 
-    # Calcular velocidades macro basadas en Greenshields
     macro_velocities = [v_max * (1 - rho / rho_max) for rho in macro_densities]
 
-    # Crear etiquetas simples
     labels = [f"E{i+1}" for i in range(len(scenarios))]
 
     axes_list = []
     titles_list = []
 
-    # ===== GRAFICA 1: VELOCIDAD PROMEDIO (arriba-izquierda, ocupa 2 filas) =====
     ax1 = fig.add_subplot(gs[:, 0])
     bars1 = ax1.bar(x_pos - width/2, macro_velocities, width, label='Macroscopico',
                    alpha=0.8, color='steelblue', edgecolor='black', linewidth=1.5)
     bars2 = ax1.bar(x_pos + width/2, micro_velocities, width, label='Microscopico',
                    alpha=0.8, color='lightcoral', edgecolor='black', linewidth=1.5)
 
-    # Agregar valores en las barras
     for bar in bars1:
         height = bar.get_height()
         ax1.text(bar.get_x() + bar.get_width()/2., height,

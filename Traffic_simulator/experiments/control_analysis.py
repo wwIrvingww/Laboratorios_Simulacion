@@ -1,25 +1,9 @@
-"""
-Análisis de Estrategias de Control de Tráfico.
-
-Este script ejecuta simulaciones comparando diferentes estrategias de control
-para evaluar su efectividad en diversos escenarios de tráfico.
-
-Comparaciones realizadas:
-1. Sin control vs. con control (baseline)
-2. VSL suave vs. VSL agresivo
-3. Control predictivo vs. reactivo
-4. Control por zonas
-5. Estrategia híbrida
-
-"""
-
 import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
-# Añadir el directorio raíz al path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.models.macroscopic import simulate_traffic_flow, greenshields_flux
@@ -42,7 +26,6 @@ from src.visualization.figure_navigator import FigureNavigator
 
 
 def create_output_directory(base_dir='results'):
-    """Crea estructura de directorios para resultados de control."""
     dirs = {
         'figures': os.path.join(base_dir, 'figures', 'control_analysis'),
         'metrics': os.path.join(base_dir, 'metrics'),
@@ -55,22 +38,8 @@ def create_output_directory(base_dir='results'):
     return dirs
 
 
-def simulate_with_control(rho0, x, t, control_strategy='vsl', 
+def simulate_with_control(rho0, x, t, control_strategy='vsl',
                          apply_at_step=0, boundary='periodic'):
-    """
-    Simula flujo de tráfico aplicando estrategia de control.
-    
-    Parámetros:
-        rho0 (np.ndarray): Condición inicial
-        x (np.ndarray): Malla espacial
-        t (np.ndarray): Malla temporal
-        control_strategy (str): Tipo de control a aplicar
-        apply_at_step (int): Paso temporal donde activar control
-        boundary (str): Condiciones de frontera
-        
-    Retorna:
-        dict: Resultados de simulación con información de control
-    """
     from src.solvers.lax_friedrichs import lax_friedrichs_step
     
     dt = t[1] - t[0]
@@ -132,15 +101,6 @@ def simulate_with_control(rho0, x, t, control_strategy='vsl',
 
 
 def compute_performance_metrics(results):
-    """
-    Calcula métricas de desempeño de la simulación.
-    
-    Parámetros:
-        results (dict): Resultados de simulación
-        
-    Retorna:
-        dict: Métricas de desempeño
-    """
     rho = results['rho']
     velocity = results['velocity']
     x = results['x']
@@ -191,10 +151,6 @@ def compute_performance_metrics(results):
 
 
 def scenario_control_1_shock_wave(x, t, output_dirs):
-    """
-    Escenario 1: Control de onda de choque.
-    Compara simulación sin control vs. con VSL.
-    """
     print("\n" + "="*70)
     print("ESCENARIO 1: Control de Onda de Choque")
     print("="*70)
@@ -315,9 +271,6 @@ def scenario_control_1_shock_wave(x, t, output_dirs):
 
 
 def scenario_control_2_predictive(x, t, output_dirs):
-    """
-    Escenario 2: Control Predictivo vs. Reactivo.
-    """
     print("\n" + "="*70)
     print("ESCENARIO 2: Control Predictivo vs. Reactivo")
     print("="*70)
@@ -390,9 +343,6 @@ def scenario_control_2_predictive(x, t, output_dirs):
 
 
 def scenario_control_3_zone_based(x, t, output_dirs):
-    """
-    Escenario 3: Control por Zonas.
-    """
     print("\n" + "="*70)
     print("ESCENARIO 3: Control por Zonas")
     print("="*70)
@@ -502,9 +452,6 @@ def scenario_control_3_zone_based(x, t, output_dirs):
 
 
 def generate_comprehensive_report(all_results, output_dirs):
-    """
-    Genera reporte comprehensivo comparando todas las estrategias.
-    """
     print("\n" + "="*70)
     print("REPORTE COMPREHENSIVO - ESTRATEGIAS DE CONTROL")
     print("="*70)
@@ -577,9 +524,6 @@ def generate_comprehensive_report(all_results, output_dirs):
 
 
 def main():
-    """
-    Función principal para ejecutar análisis de control.
-    """
     print("\n" + "="*80)
     print("ANÁLISIS DE ESTRATEGIAS DE CONTROL DE TRÁFICO VEHICULAR")
     print("="*80)

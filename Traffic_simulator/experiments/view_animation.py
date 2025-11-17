@@ -1,17 +1,9 @@
-"""
-Visor Interactivo de Animaciones Macroscópicas.
-
-Este script muestra una animación interactiva en una ventana de matplotlib
-para visualizar la evolución del tráfico en tiempo real.
-"""
-
 import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-# Añadir el directorio raíz al path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.models.macroscopic import simulate_traffic_flow
@@ -28,16 +20,6 @@ from src.utils.initial_conditions import (
 
 
 def create_interactive_animation(rho, x, t, title="Simulación de Tráfico Macroscópico"):
-    """
-    Crea y muestra una animación interactiva del modelo macroscópico.
-    
-    Parámetros:
-        rho (np.ndarray): Densidad ρ(x,t) con shape (n_time, n_space)
-        x (np.ndarray): Malla espacial (km)
-        t (np.ndarray): Malla temporal (h)
-        title (str): Título de la animación
-    """
-    # Crear figura con dos subplots
     fig = plt.figure(figsize=(12, 7))
     gs = fig.add_gridspec(2, 2, hspace=0.3, wspace=0.3)
     
@@ -154,7 +136,6 @@ def create_interactive_animation(rho, x, t, title="Simulación de Tráfico Macro
 
 
 def select_model():
-    """Permite al usuario seleccionar un modelo para visualizar."""
     print("\n" + "="*70)
     print("VISOR INTERACTIVO DE ANIMACIONES")
     print("="*70)
@@ -171,12 +152,6 @@ def select_model():
 
 
 def select_scenario(model='macro'):
-    """
-    Permite al usuario seleccionar un escenario para visualizar.
-
-    Parametros:
-        model: 'macro' o 'micro' para indicar que escenarios mostrar
-    """
     if model == 'macro':
         print("\nEscenarios disponibles (Macroscopico):")
         print("  1. Flujo Libre (densidad baja uniforme)")
@@ -204,9 +179,6 @@ def select_scenario(model='macro'):
 
 
 def main():
-    """Función principal para visualizar animación interactiva."""
-
-    # Seleccionar modelo
     model_choice = select_model()
     model = 'macro' if model_choice == '1' else 'micro'
 

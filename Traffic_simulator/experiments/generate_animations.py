@@ -1,17 +1,9 @@
-"""
-Generador de Animaciones para Escenarios Macroscópicos.
-
-Este script genera animaciones en formato GIF para los escenarios más
-interesantes del modelo macroscópico.
-"""
-
 import os
 import sys
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')  # Backend sin GUI para generar animaciones
+matplotlib.use('Agg')
 
-# Añadir el directorio raíz al path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.models.macroscopic import simulate_traffic_flow
@@ -27,35 +19,20 @@ from src.visualization.animations import animate_macroscopic_traffic
 
 
 def create_animation_directory():
-    """Crea el directorio para guardar animaciones."""
     anim_dir = os.path.join('results', 'animations', 'macroscopic')
     os.makedirs(anim_dir, exist_ok=True)
     return anim_dir
 
 
 def generate_animation(scenario_name, rho0, x, t, output_dir, fps=10, subsample=5):
-    """
-    Genera una animación para un escenario específico.
-    
-    Parámetros:
-        scenario_name (str): Nombre del escenario
-        rho0 (np.ndarray): Condición inicial
-        x (np.ndarray): Malla espacial
-        t (np.ndarray): Malla temporal
-        output_dir (str): Directorio de salida
-        fps (int): Frames por segundo
-        subsample (int): Factor de submuestreo temporal (para reducir tamaño)
-    """
     print(f"\n{'='*60}")
     print(f"Generando animación: {scenario_name}")
     print(f"{'='*60}")
-    
-    # Simular
+
     print("  Ejecutando simulación...")
     results = simulate_traffic_flow(rho0, x, t, boundary='periodic')
     rho = results['rho']
-    
-    # Submuestrear en tiempo para reducir tamaño de archivo
+
     if subsample > 1:
         rho_sub = rho[::subsample, :]
         t_sub = t[::subsample]
@@ -63,8 +40,7 @@ def generate_animation(scenario_name, rho0, x, t, output_dir, fps=10, subsample=
     else:
         rho_sub = rho
         t_sub = t
-    
-    # Generar animación
+
     print(f"  Generando animación ({len(t_sub)} frames a {fps} fps)...")
     safe_name = scenario_name.replace(' ', '_').replace(':', '').lower()
     filename = os.path.join(output_dir, f'{safe_name}.gif')
@@ -72,8 +48,7 @@ def generate_animation(scenario_name, rho0, x, t, output_dir, fps=10, subsample=
     anim = animate_macroscopic_traffic(rho_sub, x, t_sub, filename=filename, fps=fps)
     
     print(f"  ✓ Animación guardada: {filename}")
-    
-    # Calcular tamaño de archivo
+
     if os.path.exists(filename):
         size_mb = os.path.getsize(filename) / (1024 * 1024)
         print(f"  Tamaño: {size_mb:.2f} MB")
@@ -82,21 +57,17 @@ def generate_animation(scenario_name, rho0, x, t, output_dir, fps=10, subsample=
 
 
 def main():
-    """Genera animaciones para los escenarios más interesantes."""
     print("\n" + "="*80)
     print("GENERADOR DE ANIMACIONES - MODELO MACROSCÓPICO")
     print("="*80)
-    
-    # Crear directorio de salida
+
     output_dir = create_animation_directory()
     print(f"\nAnimaciones se guardarán en: {output_dir}")
-    
-    # Parámetros de discretización
-    # Nota: Usamos menos puntos espaciales y temporales para reducir tamaño
+
     L = 10.0
     T = 1.0
-    dx = 0.2      # Más grande que 0.1 (menos puntos)
-    dt = 0.01     # Igual que antes
+    dx = 0.2
+    dt = 0.01
     
     x = np.arange(0, L + dx, dx)
     t = np.arange(0, T + dt, dt)
@@ -108,8 +79,7 @@ def main():
     print(f"  Frames resultantes: ~{len(t)//5}")
     print(f"  FPS: 10")
     print(f"  Duración estimada: ~{len(t)//5/10:.1f} segundos por animación")
-    
-    # Seleccionar escenarios interesantes para animar
+
     scenarios = [
         {
             'name': 'Escenario 1 Flujo Libre',
@@ -156,8 +126,7 @@ def main():
         except Exception as e:
             print(f"  ❌ Error generando animación: {e}")
             continue
-    
-    # Resumen
+
     print("\n" + "="*80)
     print("GENERACIÓN COMPLETADA")
     print("="*80)
